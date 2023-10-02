@@ -167,10 +167,10 @@ def my_properties(request):
         pass
     else:
         my_properties_list = []
-        properties = Property.objects.all()
-        for p in properties:
-            if username == p.owner:
-                my_properties_list.append(p)
+        properties = Property.objects.values()
+        for i in range(len(properties)):
+            if username == properties[i]["owner"]:
+                my_properties_list.append(properties[i])
         # print("NUMBER_OF_PROPERTIES:",len(my_properties_list))
         return render(request, 'my_properties.html', {'properties':my_properties_list})
     

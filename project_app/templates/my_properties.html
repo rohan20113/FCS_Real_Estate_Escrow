@@ -109,12 +109,14 @@
                         <th>Available to</th>
                         <th>Price (in Rs.)</th>
                         <th>Facilities</th>
+                        <th>Modify</th>
+                        <th>Delete</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for property in properties %}
                     <tr>
-                        <td>{{ forloop.counter0 }}</td>
+                        <td>{{ property.id }}</td>
                         <td>{{ property.address_line_1 }}</td>
                         <td>{{ property.address_line_2 }}</td>
                         <td>{{ property.city }}</td>
@@ -125,13 +127,30 @@
                         <td>{{ property.ending_date }}</td>
                         <td>{{ property.price }}</td>
                         <td>{{ property.facilities }}</td>
-                        <!-- <button class="delete-button" onclick="deleteProperty({{ forloop.counter0 }})">Delete</button> -->
-                        <!-- <button class="edit-button" onclick="editProperty({{ forloop.counter0 }})">Edit</button> -->
+                        <td>
+                            <button class="edit-button" onclick="editProperty({{ forloop.counter0 }})">Edit</button>
+                        </td>
+                        <td>
+                            <button class="delete-button" onclick="deleteProperty({{ forloop.counter0 }})">Delete</button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
+
+    {{ properties|json_script:"properties_json"}}
+    
+    <script>
+        const properties_json_data = JSON.parse(document.getElementById('properties_json').textContent)
+        function deleteProperty(index) {
+            console.log(index + ": " + properties_json_data[index].id);
+        }
+
+        function editProperty(index){
+            console.log(index + ": " + properties_json_data[index].id);
+        }
+    </script>
 </body>
 </html>
