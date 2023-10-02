@@ -98,6 +98,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th>ID</th>
                         <th>Address Line-1</th>
                         <th>Address Line-2</th>
                         <th>City</th>
@@ -113,6 +114,7 @@
                 <tbody>
                     {% for property in properties %}
                     <tr>
+                        <td>{{ forloop.counter0 }}</td>
                         <td>{{ property.address_line_1 }}</td>
                         <td>{{ property.address_line_2 }}</td>
                         <td>{{ property.city }}</td>
@@ -123,6 +125,8 @@
                         <td>{{ property.ending_date }}</td>
                         <td>{{ property.price }}</td>
                         <td>{{ property.facilities }}</td>
+                        <!-- <button class="delete-button" onclick="deleteProperty({{ forloop.counter0 }})">Delete</button> -->
+                        <!-- <button class="edit-button" onclick="editProperty({{ forloop.counter0 }})">Edit</button> -->
                     </tr>
                     {% endfor %}
                 </tbody>
