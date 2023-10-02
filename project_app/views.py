@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .models import AppUser
+from .models import AppUser, Property
 from django.contrib import messages
 from django.contrib.auth.models import User, auth
 from django.views.decorators.csrf import csrf_exempt
@@ -97,9 +97,12 @@ def dashboard_admin(request):
 
 def dashboard_user(request):
     if request.method == "POST":
+        # username = request.session.get('username')
+        # request.session['username'] = username
         pass
     else:
         username = request.session.get('username')
+        request.session['username'] = username
         # print(username)
         current_user = []
         users = AppUser.objects.all()
@@ -112,3 +115,74 @@ def dashboard_user(request):
 def dashboard_user_list(request):
     users = AppUser.objects.all()
     return render(request, 'user_list.html', {'users':users})
+
+def add_property(request):
+    username = request.session.get('username')
+    # print(username)
+    if request.method == "POST":
+        input_addr_l1 = request.POST['address-line-1']
+        input_addr_l2 = request.POST['address-line-2']
+        input_city = request.POST['city']
+        input_pin_code = request.POST['pin-code']
+        input_state = request.POST['state']
+        input_contract_type = request.POST['contract-type']
+        input_facilities = request.POST['facilities']
+        input_contract_type = request.POST['contract-type']
+        input_price = request.POST['price']
+        input_availability_from = request.POST['availability-from']
+        input_availability_till = request.POST['availability-till']
+        # print(type(input_availability_till))
+        # print((input_availability_till), (input_availability_till).reverse())
+        if(input_contract_type == 'RENT' and (input_availability_from == '' or input_availability_till == '')):
+            messages.info(request, 'PLEASE FILL AVAILABILITY DATES')
+            return redirect('add_property_page')
+        # print(input_availability_from, input_availability_till, input_contract_type, input_state, input_facilities)
+
+        # Date fields
+        if(input_contract_type == 'RENT'):
+            # date = input_availability_till.split('-')
+            # input_availability_till = date[2] + '-' +  date[1] + '-' + date[0]
+            # date = input_availability_from.split('-')
+            # input_availability_from = date[2] + '-' + date[1] + '-' + date[0]
+            # print(input_availability_from, input_availability_till)
+            property_to_be_added = Property.objects.create(owner = username, address_line_1 = input_addr_l1, address_line_2 = input_addr_l2, state = input_state,
+            city = input_city, pincode = input_pin_code, type = input_contract_type, starting_date = input_availability_from, ending_date = input_availability_till,
+            price = input_price, facilities = input_facilities)
+            property_to_be_added.save()
+            return redirect('dashboard_page')   
+        # print(input_availability_from, input_availability_till)
+        # Creating the object
+        else:
+            property_to_be_added = Property.objects.create(owner = username, address_line_1 = input_addr_l1, address_line_2 = input_addr_l2, state = input_state,
+            city = input_city, pincode = input_pin_code, type = input_contract_type, price = input_price, facilities = input_facilities)
+            property_to_be_added.save()
+            return redirect('dashboard_page')   
+    else:
+        return render(request, 'add_property.html')
+    
+def my_properties(request):
+    username = request.session.get('username')
+    if(request.method == 'POST'):
+        pass
+    else:
+        my_properties_list = []
+        properties = Property.objects.all()
+        for p in properties:
+            if username == p.owner:
+                my_properties_list.append(p)
+        # print("NUMBER_OF_PROPERTIES:",len(my_properties_list))
+        return render(request, 'my_properties.html', {'properties':my_properties_list})
+    
+def search_properties(request):
+    username = request.session.get('username')
+    if(request.method == 'POST'):
+        pass
+    else:
+        my_properties_list = []
+        properties = Property.objects.all()
+        for p in properties:
+            if (p.owner != username):
+                my_properties_list.append(p)
+        # print("NUMBER_OF_PROPERTIES:",len(my_properties_list))
+        return render(request, 'search_properties.html', {'properties':my_properties_list})
+

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Property</title>
+    <style>
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f4f4f4;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            max-width: 100%;
+        }
+
+        .radio-label {
+            display: inline-block;
+            margin-top: 10px;
+            margin-right: 20px;
+        }
+
+        .checkbox-label {
+            display: block;
+        }
+
+        button[type="submit"] {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .date-fields {
+            display: none;
+        }
+
+        .message-container {
+            margin-top: 10px;
+        }
+
+        .messages {
+            background-color: #ffcccc;
+            border: 1px solid #ff0000;
+            color: #ff0000;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .go-to-dashboard-button {
+            /* right: "100px" */
+            /* width: '200px'; */
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .go-to-dashboard-button:hover {
+            background-color: #1e6aae;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a class="go-to-dashboard-button" href="/dashboard">DASHBOARD</a>
+        <h2>Add Property</h2>
+        <form action="" method="post">
+            {% csrf_token %}
+            <label for="address-line-1">Address Line-1:</label>
+            <input type="text" id="address-line-1" name="address-line-1" required maxlength="30">
+            
+            <label for="address-line-2">Address Line-2:</label>
+            <input type="text" id="address-line-2" name="address-line-2" maxlength="30">
+            
+            <label for="city">City:</label>
+            <input type="text" id="city" name="city" required maxlength="30">
+            
+            <label for="pin-code">PIN-CODE:</label>
+            <input type="text" id="pin-code" name="pin-code" required pattern="[0-9]{6}">
+            
+            <label for="state">State:</label>
+            <select id="state" name="state" required>
+                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                <option value="Assam">Assam</option>
+                <option value="Bihar">Bihar</option>
+                <option value="Chhattisgarh">Chhattisgarh</option>
+                <option value="Goa">Goa</option>
+                <option value="Gujarat">Gujarat</option>
+                <option value="Haryana">Haryana</option>
+                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                <option value="Jharkhand">Jharkhand</option>
+                <option value="Karnataka">Karnataka</option>
+                <option value="Kerala">Kerala</option>
+                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                <option value="Maharashtra">Maharashtra</option>
+                <option value="Manipur">Manipur</option>
+                <option value="Meghalaya">Meghalaya</option>
+                <option value="Mizoram">Mizoram</option>
+                <option value="Nagaland">Nagaland</option>
+                <option value="Odisha">Odisha</option>
+                <option value="Punjab">Punjab</option>
+                <option value="Rajasthan">Rajasthan</option>
+                <option value="Sikkim">Sikkim</option>
+                <option value="Tamil Nadu">Tamil Nadu</option>
+                <option value="Telangana">Telangana</option>
+                <option value="Tripura">Tripura</option>
+                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                <option value="Uttarakhand">Uttarakhand</option>
+                <option value="West Bengal">West Bengal</option>
+                <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                <option value="Chandigarh">Chandigarh</option>
+                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Lakshadweep">Lakshadweep</option>
+                <option value="Puducherry">Puducherry</option>
+            </select>
+
+            <label for="contract-type">Contract Type:</label>
+            <span class="radio-label">
+                <input type="radio" id="sell" name="contract-type" value="SELL" required>
+                <label class="radio-label" for="sell">Sell</label>
+            </span>
+            <span class="radio-label">
+                <input type="radio" id="rent" name="contract-type" value="RENT" required>
+                <label class="radio-label" for="rent">Rent</label>
+            </span>
+
+            <div class="date-fields">
+                <label for="availability-from">Available From:</label>
+                <input type="date" id="availability-from" name="availability-from">
+                
+                <label for="availability-till">Available Till:</label>
+                <input type="date" id="availability-till" name="availability-till">
+            </div>
+            
+            <label for="price">Price (in Rs.):</label>
+            <input type="number" id="price" name="price" required>
+            
+            <label for="facilities">Facilities (Select one):</label>
+            <select id="facilities" name="facilities" required>
+                <option value="Furnished">Furnished</option>
+                <option value="Semi-Furnished">Semi-Furnished</option>
+                <option value="Unfurnished">Unfurnished</option>
+            </select>
+
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        const contractType = document.querySelectorAll('input[name="contract-type"]');
+        const dateFields = document.querySelector('.date-fields');
+
+        contractType.forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                if (this.value === 'RENT') {
+                    dateFields.style.display = 'block';
+                    
+                } else {
+                    dateFields.style.display = 'none';
+                }
+            });
+        });
+    </script>
+    <div class="message-container">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+</body>
+</html>

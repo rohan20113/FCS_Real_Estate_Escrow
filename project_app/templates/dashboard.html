@@ -49,6 +49,23 @@
             background-color: #c0392b;
         }
 
+        .button-container {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        .button-container a.button {
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -77,6 +94,13 @@
             <h2>User Dashboard</h2>
             <a class="logout-button" href="/">Logout</a>
         </div>
+
+        <div class="button-container">
+            <a class="button" href="/search_properties">Search Properties</a>
+            <a class="button" href="/my_properties">My Properties</a>
+            <a class="button" href="/add_property">Add Property</a>
+        </div>
+
         <table>
             <thead>
                 <tr>
