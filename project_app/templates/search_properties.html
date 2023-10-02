@@ -3,6 +3,7 @@
 <head>
     <title>Property Listing</title>
     <style>
+        /* Your existing styles here */
         html, body {
             height: 100%;
             font-family: Arial, sans-serif;
@@ -86,14 +87,117 @@
         .dashboard-button:hover {
             background-color: #1e6aae;
         }
+        /* Style for filters */
+        .filter-container {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f4f4f4;
+            border-radius: 5px;
+        }
+
+        .filter-label {
+            font-weight: bold;
+        }
+
+        /* Style for search button */
+        .search-button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .search-button:hover {
+            background-color: #1e6aae;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         {% csrf_token %}
         <h2>Property Listing</h2>
-        <a class="dashboard-button" href="/dashboard">Dashboard</a> <!-- Dashboard button -->
-        <a class="logout-button" href="/">Logout</a> <!-- Logout button -->
+        <a class="dashboard-button" href="/dashboard">Dashboard</a>
+        <a class="logout-button" href="/">Logout</a>
+        
+        <!-- Filters Section -->
+        <div class="filter-container">
+            <h3>Filters:</h3>
+            
+            <label class="filter-label" for="filter-city">City:</label>
+            <input type="text" id="filter-city" placeholder="Enter city name">
+            
+            <label class="filter-label" for="filter-state">State:</label>
+            <select id="filter-state">
+                <!-- Add options dynamically based on available states -->
+                <option value="">All</option>
+                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                <option value="Assam">Assam</option>
+                <option value="Bihar">Bihar</option>
+                <option value="Chhattisgarh">Chhattisgarh</option>
+                <option value="Goa">Goa</option>
+                <option value="Gujarat">Gujarat</option>
+                <option value="Haryana">Haryana</option>
+                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                <option value="Jharkhand">Jharkhand</option>
+                <option value="Karnataka">Karnataka</option>
+                <option value="Kerala">Kerala</option>
+                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                <option value="Maharashtra">Maharashtra</option>
+                <option value="Manipur">Manipur</option>
+                <option value="Meghalaya">Meghalaya</option>
+                <option value="Mizoram">Mizoram</option>
+                <option value="Nagaland">Nagaland</option>
+                <option value="Odisha">Odisha</option>
+                <option value="Punjab">Punjab</option>
+                <option value="Rajasthan">Rajasthan</option>
+                <option value="Sikkim">Sikkim</option>
+                <option value="Tamil Nadu">Tamil Nadu</option>
+                <option value="Telangana">Telangana</option>
+                <option value="Tripura">Tripura</option>
+                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                <option value="Uttarakhand">Uttarakhand</option>
+                <option value="West Bengal">West Bengal</option>
+                <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                <option value="Chandigarh">Chandigarh</option>
+                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Lakshadweep">Lakshadweep</option>
+                <option value="Puducherry">Puducherry</option>
+                <!-- Add more options as needed -->
+            </select>
+
+            <label class="filter-label" for="filter-facilities">Facilities:</label>
+            <select id="filter-facilities">
+                <!-- Add options dynamically based on available facilities -->
+                <!-- <option value="">All</option> -->
+                <option value="Furnished">Furnished</option>
+                <option value="Semi-Furnished">Semi-Furnished</option>
+                <option value="Unfurnished">Unfurnished</option>
+
+                <!-- Add more options as needed -->
+            </select>
+
+            <label class="filter-label" for="filter-type">Contract Type:</label>
+            <select id="filter-type">
+                <!-- Add options dynamically based on available types -->
+                <option value="">All</option>
+                <option value="SELL">Sell</option>
+                <option value="RENT">Rent</option>
+                <!-- Add more options as needed -->
+            </select>
+
+            <label class="filter-label" for="filter-price">Max Price(in Rs.):</label>
+            <input type="number" id="filter-price" placeholder="Enter max price">
+            <button type="button" class="search-button" id="search-button">Search</button>
+            <!-- <a class="search-button" href="/search_properties">Search</a> -->
+            
+        </div>
+        
         <div class="scroll-container">
             <table>
                 <thead>
@@ -114,7 +218,7 @@
                 <tbody>
                     {% for property in properties %}
                     <tr>
-                        <td>{{ property.owner }}</td>
+                        <td data-index="{{ forloop.counter0}}">{{ property.owner }}</td>
                         <td>{{ property.address_line_1 }}</td>
                         <td>{{ property.address_line_2 }}</td>
                         <td>{{ property.city }}</td>
@@ -131,5 +235,62 @@
             </table>
         </div>
     </div>
+    {{ properties|json_script:"properties_json"}}
+    <!-- JavaScript for filtering and searching -->
+    <script>
+        // Get references to filter elements
+        const filterCity = document.getElementById('filter-city');
+        const filterState = document.getElementById('filter-state');
+        const filterFacilities = document.getElementById('filter-facilities');
+        const filterType = document.getElementById('filter-type');
+        const filterPrice = document.getElementById('filter-price');
+
+        // Function to filter and search results
+        function filterAndSearch() {
+            const city = filterCity.value.toLowerCase();
+            const state = filterState.value;
+            const facilities = filterFacilities.value;
+            const contractType = filterType.value;
+            const maxPrice = filterPrice.value;
+            // console.log(city + " " + state + " " + facilities + " " + type + " " + maxPrice)
+            const properties_json_data = JSON.parse(document.getElementById('properties_json').textContent)
+            // console.log(properties_json_data.length)
+            // console.log(properties_json_data)
+            // Example: Loop through table rows and hide/show based on filters
+            const tableRows = document.querySelectorAll('tbody tr');
+            // console.log((tableRows))
+            tableRows.forEach(function (row) {
+                // console.log("HI")
+                
+                // Selecting each cell wihtin the row passed
+                const cells = row.querySelectorAll('td');
+
+                // Printing each cell data to verify whether even data exists or not. 
+                // cells.forEach(function(cell, index) {
+                //     const cellData = cell.textContent.toLowerCase();
+                //     console.log(`Row ${index + 1}, Cell ${index + 1}:`, cellData);
+                // });
+                const rowData = row.textContent.toLowerCase();
+                // console.log(cells[3].textContent.toLocaleLowerCase());
+                // console.log(city.toLocaleLowerCase());
+
+                if (
+                    (city !== '' && cells[3].textContent.toLowerCase() !== city.toLowerCase()) ||
+                    (state !== '' && cells[5].textContent.toLowerCase() !== state.toLowerCase()) ||
+                    (facilities !== '' && cells[10].textContent.toLowerCase()!== facilities.toLowerCase()) || 
+                    (contractType !== '' && cells[6].textContent.toLowerCase()!== contractType.toLowerCase()) ||
+                    (maxPrice !== '' && parseFloat(cells[9].textContent) > parseFloat(maxPrice))
+                ) {
+                    row.style.display = 'none';
+                } else {
+                    row.style.display = 'table-row';
+                }
+            });
+        }
+        
+        // Add event listener for the search button
+        const searchButton = document.getElementById('search-button');
+        searchButton.addEventListener('click', filterAndSearch);
+    </script>
 </body>
 </html>

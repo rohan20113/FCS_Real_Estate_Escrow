@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User, auth
 from django.views.decorators.csrf import csrf_exempt
 import hashlib
+from django.core import serializers
 # from django.shortcuts import render, redirect
 
 # Create your views here.
@@ -175,14 +176,17 @@ def my_properties(request):
     
 def search_properties(request):
     username = request.session.get('username')
+    # print(request)
     if(request.method == 'POST'):
         pass
     else:
         my_properties_list = []
-        properties = Property.objects.all()
-        for p in properties:
-            if (p.owner != username):
-                my_properties_list.append(p)
-        # print("NUMBER_OF_PROPERTIES:",len(my_properties_list))
+        properties = list(Property.objects.values())
+        # print(properties)
+        for i in range(len(properties)):
+            if(properties[i]['owner'] !=username):
+                my_properties_list.append(properties[i])
+        # print("LENGTH:", len(my_properties_list))
+        # print("SELECTED LIST:\n", (my_properties_list))
         return render(request, 'search_properties.html', {'properties':my_properties_list})
 
