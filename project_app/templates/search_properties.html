@@ -98,6 +98,7 @@
 
         .filter-label {
             font-weight: bold;
+            /* padding: "20px"; */
         }
 
         /* Style for search button */
@@ -190,6 +191,9 @@
                 <option value="RENT">Rent</option>
                 <!-- Add more options as needed -->
             </select>
+            <br></br>
+            <label class = "filter-label" for="availability-from">Available From:</label>
+            <input type="date" id="filter-availability-from" name="availability-from">
 
             <label class="filter-label" for="filter-price">Max Price(in Rs.):</label>
             <input type="number" id="filter-price" placeholder="Enter max price">
@@ -244,6 +248,8 @@
         const filterFacilities = document.getElementById('filter-facilities');
         const filterType = document.getElementById('filter-type');
         const filterPrice = document.getElementById('filter-price');
+        const filterStartingDate = document.getElementById('filter-availability-from');
+        // console.log(filterStartingDate.value === '')
 
         // Function to filter and search results
         function filterAndSearch() {
@@ -252,7 +258,9 @@
             const facilities = filterFacilities.value;
             const contractType = filterType.value;
             const maxPrice = filterPrice.value;
-            // console.log(city + " " + state + " " + facilities + " " + type + " " + maxPrice)
+            const startingDate = filterStartingDate.value;
+            // console.log("STARTING DATE FILTER: " + startingDate)
+            // console.log(city + " " + state + " " + facilities + " " + contractType + " " + maxPrice + " " + startingDate)
             const properties_json_data = JSON.parse(document.getElementById('properties_json').textContent)
             // console.log(properties_json_data.length)
             // console.log(properties_json_data)
@@ -273,16 +281,79 @@
                 const rowData = row.textContent.toLowerCase();
                 // console.log(cells[3].textContent.toLocaleLowerCase());
                 // console.log(city.toLocaleLowerCase());
+                function parseDate(inputDate) {
+                    var parts = inputDate.split(/[\s,]+/);
+                    var monthMapping = {
+                        "Jan.": 0,
+                        "Feb.": 1,
+                        "Mar.": 2,
+                        "Apr.": 3,
+                        "May": 4,
+                        "Jun.": 5,
+                        "Jul.": 6,
+                        "Aug.": 7,
+                        "Sep.": 8,
+                        "Oct.": 9,
+                        "Nov.": 10,
+                        "Dec.": 11
+                    };
+                    var month = monthMapping[parts[0]];
+                    var day = parseInt(parts[1], 10);
+                    var year = parseInt(parts[2], 10);
+                    // console.log(day, month, year);
+                    var dateString = year.toString() + "-" + month.toString() + "-" + day.toString();
+                    return dateString;
+                    // console.log(dateString);
+                    // var formattedDate = new Date(year, month, day);
+                    // formattedDate = formattedDate.getFullYear() + '-' + String(formattedDate.getMonth() + 1).padStart(2, '0') + '-' + String(formattedDate.getDate()).padStart(2, '0');
+                    // return formattedDate;
+                }
+                // console.log("DATE FILTER: " + startingDate)
+                // console.log("DATE CURRENT: " )
+                // console.log("DATE: " + cells[7].textContent )
+                var existingDate = '';
+                if(cells[7].textContent !== 'None'){
+                    existingDate = parseDate(cells[7].textContent)
+                    // console.log(existingDate);
+                }
+                console.log(existingDate + " : " + startingDate);
+                available_from_flag = false;
+                if(existingDate !== ''){
+                    // Existing Date -> date of the property:
+                    existing_parts = existingDate.split('-');
+                    filter_parts = startingDate.split('-');
 
+                    // yyyy - mm - dd
+                    if(parseFloat(existing_parts[0]) > parseFloat(filter_parts[0])){
+                        console.log("hi1");
+                        available_from_flag = true;
+                    }else{
+                        if((parseFloat(existing_parts[0]) == parseFloat(filter_parts[0])) && (parseFloat(existing_parts[1]) > parseFloat(filter_parts[1]))){
+                            console.log("hi2");
+                            available_from_flag = true;
+                        }
+                        else{
+                            if((parseFloat(existing_parts[0]) == parseFloat(filter_parts[0])) && (parseFloat(existing_parts[1]) == parseFloat(filter_parts[1])) && (parseFloat(existing_parts[2]) >= parseFloat(filter_parts[2]))){
+                                console.log("hi3");
+                                available_from_flag = true;
+                            }
+                        }
+                    }
+                }else{
+                    available_from_flag = true;
+                }
+
+                // Applying Filters: 
                 if (
                     (city !== '' && cells[3].textContent.toLowerCase() !== city.toLowerCase()) ||
                     (state !== '' && cells[5].textContent.toLowerCase() !== state.toLowerCase()) ||
                     (facilities !== '' && cells[10].textContent.toLowerCase()!== facilities.toLowerCase()) || 
                     (contractType !== '' && cells[6].textContent.toLowerCase()!== contractType.toLowerCase()) ||
-                    (maxPrice !== '' && parseFloat(cells[9].textContent) > parseFloat(maxPrice))
+                    (maxPrice !== '' && parseFloat(cells[9].textContent) > parseFloat(maxPrice)) ||
+                    (existingDate !== '' && available_from_flag === false && startingDate !== '' )
                 ) {
                     row.style.display = 'none';
-                } else {
+                }else {
                     row.style.display = 'table-row';
                 }
             });
