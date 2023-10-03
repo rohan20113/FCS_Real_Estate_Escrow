@@ -189,4 +189,3 @@ def search_properties(request):
         # print("LENGTH:", len(my_properties_list))
         # print("SELECTED LIST:\n", (my_properties_list))
         return render(request, 'search_properties.html', {'properties':my_properties_list})
-
