@@ -1,4 +1,7 @@
 from django.db import models
+from django import forms
+# from django.forms import fields
+# from django.forms import fields
 
 # Create your models here.
 class AppUser(models.Model):
@@ -29,3 +32,9 @@ class Property(models.Model):
 
     def __str__(self):
         return f"{self.owner} {self.address_line_1} {self.address_line_2} {self.state} {self.city} {self.pincode} {self.type} {self.starting_date} {self.ending_date} Rs{self.price} {self.facilities}" 
+    
+
+# class PropertyForm(forms.ModelForm):
+#     class Meta:
+#         model = Property
+#         fields = "__all__"

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Property Details</title>
+    <style>
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f4f4f4;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            max-width: 100%;
+        }
+
+        .radio-label {
+            display: inline-block;
+            margin-top: 10px;
+            margin-right: 20px;
+        }
+
+        .checkbox-label {
+            display: block;
+        }
+
+        button[type="submit"] {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .date-fields {
+            display: none;
+        }
+
+        .message-container {
+            margin-top: 10px;
+        }
+
+        .messages {
+            background-color: #ffcccc;
+            border: 1px solid #ff0000;
+            color: #ff0000;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .go-to-dashboard-button {
+            /* right: "100px" */
+            /* width: '200px'; */
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .go-to-dashboard-button:hover {
+            background-color: #1e6aae;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a class="go-to-dashboard-button" href="/dashboard">DASHBOARD</a>
+        <a class="go-to-dashboard-button" href="/my_properties">MY PROPERTIES</a>
+        <h2>Add Property</h2>
+        <form action="/update_property/{{property.id}}" method="post">
+            {% csrf_token %}
+            <label for="address-line-1">Address Line-1:</label>
+            <input type="text" id="address-line-1" name="address-line-1" required maxlength="30" value="{{property.address_line_1}}">
+            
+            <label for="address-line-2">Address Line-2:</label>
+            <input type="text" id="address-line-2" name="address-line-2" maxlength="30" value="{{property.address_line_2}}">
+            
+            <label for="city">City:</label>
+            <input type="text" id="city" name="city" required maxlength="30" value="{{property.city}}">
+            
+            <label for="pin-code">PIN-CODE:</label>
+            <input type="text" id="pin-code" name="pin-code" required pattern="[0-9]{6}" value="{{property.pincode}}">
+            
+            <label for="state">State:</label>
+            <select id="state" name="state" value="{{property.state}}" required >
+                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                <option value="Assam">Assam</option>
+                <option value="Bihar">Bihar</option>
+                <option value="Chhattisgarh">Chhattisgarh</option>
+                <option value="Goa">Goa</option>
+                <option value="Gujarat">Gujarat</option>
+                <option value="Haryana">Haryana</option>
+                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                <option value="Jharkhand">Jharkhand</option>
+                <option value="Karnataka">Karnataka</option>
+                <option value="Kerala">Kerala</option>
+                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                <option value="Maharashtra">Maharashtra</option>
+                <option value="Manipur">Manipur</option>
+                <option value="Meghalaya">Meghalaya</option>
+                <option value="Mizoram">Mizoram</option>
+                <option value="Nagaland">Nagaland</option>
+                <option value="Odisha">Odisha</option>
+                <option value="Punjab">Punjab</option>
+                <option value="Rajasthan">Rajasthan</option>
+                <option value="Sikkim">Sikkim</option>
+                <option value="Tamil Nadu">Tamil Nadu</option>
+                <option value="Telangana">Telangana</option>
+                <option value="Tripura">Tripura</option>
+                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                <option value="Uttarakhand">Uttarakhand</option>
+                <option value="West Bengal">West Bengal</option>
+                <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                <option value="Chandigarh">Chandigarh</option>
+                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Lakshadweep">Lakshadweep</option>
+                <option value="Puducherry">Puducherry</option>
+            </select>
+
+            <label for="contract-type">Contract Type:</label>
+            <span class="radio-label" >
+                <input type="radio" id="sell" name="contract-type" value="SELL" required>
+                <label class="radio-label" for="sell">Sell</label>
+            </span>
+            <span class="radio-label">
+                <input type="radio" id="rent" name="contract-type" value="RENT" required>
+                <label class="radio-label" for="rent">Rent</label>
+            </span>
+
+            <div class="date-fields">
+                <label for="availability-from">Available From:</label>
+                <input type="date" id="availability-from" name="availability-from">
+                
+                <label for="availability-till">Available Till:</label>
+                <input type="date" id="availability-till" name="availability-till">
+            </div>
+            
+            <label for="price">Price (in Rs.):</label>
+            <input type="number" id="price" name="price" required value="{{property.price}}">
+            
+            <label for="facilities">Facilities (Select one):</label>
+            <select id="facilities" name="facilities" required value="{{property.facilities}}">
+                <!-- <option value="{{property.facilities}}">{{property.facilities}} (CURRENTLY)</option> -->
+                <option value="Furnished">Furnished</option>
+                <option value="Semi-Furnished">Semi-Furnished</option>
+                <option value="Unfurnished">Unfurnished</option>
+            </select>
+
+            <button type="submit">Update</button>
+        </form>
+    </div>
+
+    <script>
+        const contractType = document.querySelectorAll('input[name="contract-type"]');
+        const dateFields = document.querySelector('.date-fields');
+
+        contractType.forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                if (this.value === 'RENT') {
+                    dateFields.style.display = 'block';
+                    
+                } else {
+                    dateFields.style.display = 'none';
+                }
+            });    
+        });
+    </script>
+    <div class="message-container">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+
+    <script>
+        // Setting the state value
+        var selectElement = document.getElementById("state");
+        var existingState = "{{property.state}}";
+        for (var i = 0; i < selectElement.options.length; i++) {
+            // console.log(selectElement.options[i].value)
+            // console.log(existingState)
+            if (selectElement.options[i].value === existingState) {
+                // console.log(true);
+                selectElement.options[i].selected = true;
+                break; 
+            }
+        }
+        // Setting the facilities value
+        var selectElement = document.getElementById("facilities");
+        var existingFacilities = "{{property.facilities}}";
+        for (var i = 0; i < selectElement.options.length; i++) {
+            // console.log(selectElement.options[i].value)
+            // console.log(existingFacilities)
+            if (selectElement.options[i].value === existingFacilities) {
+                // console.log(true);
+                selectElement.options[i].selected = true;
+                break; 
+            }
+        }
+
+        // Setting the contract type.
+        var existingType = "{{property.type}}";
+        // console.log(existingType);
+        var sellContract = document.getElementById('sell')
+        // console.log(sellContract.checked)
+        var rentContract = document.getElementById('rent')
+        // console.log(rentContract.checked)
+        if(existingType.toLocaleLowerCase() == 'sell'){
+            // Update the radio button
+            sellContract.checked = true;
+            var startingDate = document.getElementById("availability-from")
+            startingDate.value = new Date("0000-00-00");
+            var endingDate = document.getElementById("availability-till")
+            endingDate.value = new Date("0000-00-00");
+        }
+        else{
+            // Update the radio button corresponding to rent 
+            rentContract.checked = true;
+            // Update the dates
+            const dateFields = document.querySelector('.date-fields');
+            dateFields.style.display = 'block';
+            var startingDate = document.getElementById("availability-from")
+            var endingDate = document.getElementById("availability-till")
+            function parseDate(inputDate) {
+                var parts = inputDate.split(/[\s,]+/);
+                var monthMapping = {
+                    "Jan.": 0,
+                    "Feb.": 1,
+                    "Mar.": 2,
+                    "Apr.": 3,
+                    "May": 4,
+                    "Jun.": 5,
+                    "Jul.": 6,
+                    "Aug.": 7,
+                    "Sep.": 8,
+                    "Oct.": 9,
+                    "Nov.": 10,
+                    "Dec.": 11
+                };
+                var month = monthMapping[parts[0]];
+                var day = parseInt(parts[1], 10);
+                var year = parseInt(parts[2], 10);
+                // console.log(day, month, year);
+                var dateString = year.toString() + "-" + month.toString() + "-" + day.toString();
+                // console.log(dateString);
+                var formattedDate = new Date(year, month, day);
+                formattedDate = formattedDate.getFullYear() + '-' + String(formattedDate.getMonth() + 1).padStart(2, '0') + '-' + String(formattedDate.getDate()).padStart(2, '0');
+                return formattedDate;
+            }
+            startingDate.value = parseDate('{{property.starting_date}}');
+            endingDate.value = parseDate('{{property.ending_date}}');
+            // console.log('{{property.starting_date}}')
+        }
+    </script>
+</body>
+</html>

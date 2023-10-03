@@ -128,10 +128,10 @@
                         <td>{{ property.price }}</td>
                         <td>{{ property.facilities }}</td>
                         <td>
-                            <button class="edit-button" onclick="editProperty({{ forloop.counter0 }})">Edit</button>
+                            <a href="/edit_property/{{property.id}}">Edit</a>
                         </td>
                         <td>
-                            <button class="delete-button" onclick="deleteProperty({{ forloop.counter0 }})">Delete</button>
+                            <a href="/delete_property/{{property.id}}">Delete</a>
                         </td>
                     </tr>
                     {% endfor %}

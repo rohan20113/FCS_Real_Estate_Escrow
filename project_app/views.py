@@ -5,7 +5,10 @@ from django.contrib import messages
 from django.contrib.auth.models import User, auth
 from django.views.decorators.csrf import csrf_exempt
 import hashlib
+from django import forms
 from django.core import serializers
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
 # from django.shortcuts import render, redirect
 
 # Create your views here.
@@ -189,3 +192,68 @@ def search_properties(request):
         # print("LENGTH:", len(my_properties_list))
         # print("SELECTED LIST:\n", (my_properties_list))
         return render(request, 'search_properties.html', {'properties':my_properties_list})
+    
+
+def edit_property(request, id = id):
+    property = Property.objects.get(id=id)
+    return render(request, 'edit_property.html', {'property':property})
+
+def update_property(request, id):
+    property = Property.objects.get(id=id)
+    if request.method =="POST":
+        property_instance = get_object_or_404(Property, pk = id)
+        input_addr_l1 = request.POST['address-line-1']
+        input_addr_l2 = request.POST['address-line-2']
+        input_city = request.POST['city']
+        input_pin_code = request.POST['pin-code']
+        input_state = request.POST['state']
+        input_contract_type = request.POST['contract-type']
+        input_facilities = request.POST['facilities']
+        input_contract_type = request.POST['contract-type']
+        input_price = request.POST['price']
+        input_availability_from = request.POST['availability-from']
+        input_availability_till = request.POST['availability-till']
+        if(input_contract_type == 'RENT' and (input_availability_from == '' or input_availability_till == '')):
+            messages.info(request, 'PLEASE FILL AVAILABILITY DATES')
+            return redirect('edit_property_page')
+        # print(input_availability_from, input_availability_till, input_contract_type, input_state, input_facilities)
+
+        # Date fields
+        if(input_contract_type == 'RENT'):
+            # property_instance.owner = input_owner
+            property_instance.address_line_1 = input_addr_l1
+            property_instance.address_line_2 = input_addr_l2
+            property_instance.state = input_state
+            property_instance.city = input_city
+            property_instance.pincode = input_pin_code
+            property_instance.type = input_contract_type
+            property_instance.starting_date = input_availability_from
+            property_instance.ending_date = input_availability_till
+            property_instance.price = input_price
+            property_instance.facilities = input_facilities
+            property_instance.save()
+            return redirect('my_properties_page')   
+        # print(input_availability_from, input_availability_till)
+        # Creating the object
+        else:
+            property_instance.address_line_1 = input_addr_l1
+            property_instance.address_line_2 = input_addr_l2
+            property_instance.state = input_state
+            property_instance.city = input_city
+            property_instance.pincode = input_pin_code
+            property_instance.type = input_contract_type
+            property_instance.starting_date = None
+            property_instance.ending_date = None
+            # print(property_instance.starting_date)
+            # print(property_instance.ending_date)
+            property_instance.price = input_price
+            property_instance.facilities = input_facilities
+            property_instance.save()
+            return redirect('my_properties_page')  
+    else:
+        return render(request, 'edit_property.html', {'property':property})
+
+def delete_property(request, id):
+    property = Property.objects.get(id=id)
+    property.delete()
+    return redirect('my_properties_page')
