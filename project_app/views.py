@@ -9,6 +9,8 @@ from django import forms
 from django.core import serializers
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
+# from django.views.decorators.cache import never_cache
+from django.contrib.auth.decorators import login_required
 # from django.shortcuts import render, redirect
 
 # Create your views here.
@@ -84,7 +86,7 @@ def register_user(request):
             
     else:
         return render(request, 'signup.html')
-    
+
 def dashboard_admin(request):
     if request.method == "POST":
         pass
@@ -99,13 +101,20 @@ def dashboard_admin(request):
                 break
         return render(request, 'admin_dashboard.html', {'user': current_user}) 
 
+# @login_required
 def dashboard_user(request):
     if request.method == "POST":
-        # username = request.session.get('username')
-        # request.session['username'] = username
+        username = request.session.get('username')
+        if(username is None):
+            return redirect('/')
+        request.session['username'] = username
+        # if(username is None):
+        # return redirect('/')
         pass
     else:
         username = request.session.get('username')
+        if(username is None):
+            return redirect('/')
         request.session['username'] = username
         # print(username)
         current_user = []
@@ -122,8 +131,12 @@ def dashboard_user_list(request):
 
 def add_property(request):
     username = request.session.get('username')
+    if(username is None):
+        return redirect('/')
     # print(username)
     if request.method == "POST":
+        if(username is None):
+            return redirect('/')
         input_addr_l1 = request.POST['address-line-1']
         input_addr_l2 = request.POST['address-line-2']
         input_city = request.POST['city']
@@ -162,10 +175,14 @@ def add_property(request):
             property_to_be_added.save()
             return redirect('dashboard_page')   
     else:
+        if(username is None):
+            return redirect('/')
         return render(request, 'add_property.html')
     
 def my_properties(request):
     username = request.session.get('username')
+    if(username is None):
+        return redirect('/')
     if(request.method == 'POST'):
         pass
     else:
@@ -179,7 +196,9 @@ def my_properties(request):
     
 def search_properties(request):
     username = request.session.get('username')
-    # print(request)
+    # print(type(username), username)
+    if(username is None):
+        return redirect('/')
     if(request.method == 'POST'):
         pass
     else:
@@ -195,6 +214,9 @@ def search_properties(request):
     
 
 def edit_property(request, id = id):
+    username = request.session.get('username')
+    if(username is None):
+        return redirect('/')
     property = Property.objects.get(id=id)
     return render(request, 'edit_property.html', {'property':property})
 
@@ -254,6 +276,13 @@ def update_property(request, id):
         return render(request, 'edit_property.html', {'property':property})
 
 def delete_property(request, id):
+    username = request.session.get('username')
+    if(username is None):
+        return redirect('/')
     property = Property.objects.get(id=id)
     property.delete()
     return redirect('my_properties_page')
+
+def logout_user(request):
+    request.session.flush()
+    return redirect('/')
