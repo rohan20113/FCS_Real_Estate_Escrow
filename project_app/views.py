@@ -89,10 +89,15 @@ def register_user(request):
 
 def dashboard_admin(request):
     if request.method == "POST":
-        pass
+        username = request.session.get('username')
+        # print(username)
+        if(username is None):
+            return redirect('/')
     else:
         username = request.session.get('username')
         # print(username)
+        if(username is None):
+            return redirect('/')
         current_user = []
         users = AppUser.objects.all()
         for x in users:
@@ -195,13 +200,16 @@ def my_properties(request):
         return render(request, 'my_properties.html', {'properties':my_properties_list})
     
 def search_properties(request):
-    username = request.session.get('username')
-    # print(type(username), username)
-    if(username is None):
-        return redirect('/')
     if(request.method == 'POST'):
-        pass
+        username = request.session.get('username')
+        # print(type(username), username)
+        if(username is None):
+            return redirect('/')
     else:
+        username = request.session.get('username')
+        # print(type(username), username)
+        if(username is None):
+            return redirect('/')
         my_properties_list = []
         properties = list(Property.objects.values())
         # print(properties)

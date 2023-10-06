@@ -13,18 +13,24 @@
         }
 
         .container {
-            max-width: 1400px;
-            margin: 20px auto;
+            max-width: 1200px;
+            /* max-height:max-content */
+            margin: 15px auto;
             padding: 20px;
-            border: 2px solid #3498db;
+            /* border: 2px solid #3498db; */
             background-color: #fff;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
             border-radius: 10px;
             height: 100%;
             position: relative; /* Add relative positioning for button placement */
+             /* max-height: calc(100% - 120px); */
+            overflow-x: auto; 
+            overflow-y: auto; 
         }
 
         .scroll-container {
+            /* border: 2px solid #3498db; */
+            /* background-color: #fff; */
             max-height: calc(100% - 120px);
             overflow-x: auto;
             overflow-y: auto;
@@ -53,7 +59,8 @@
         /* Style for buttons */
         .logout-button {
             position: absolute;
-            top: 35px;
+            /* margin-top:50px ; */
+            top: 60px;
             right: 20px; /* Position the "Logout" button to the right */
             background-color: #e74c3c;
             color: #fff;
@@ -67,7 +74,7 @@
 
         .dashboard-button {
             position: absolute;
-            top: 35px;
+            top: 60px;
             right: 150px; /* Position the "Dashboard" button to the left */
             background-color: #3498db;
             color: #fff;
@@ -97,12 +104,32 @@
         }
 
         .filter-label {
+            margin-left: 40px;
+            font-weight: bold;
+            /* padding: "20px"; */
+        }
+        
+        .filter-label-second {
+            margin-left: 180px;
+            font-weight: bold;
+            /* padding: "20px"; */
+        }
+        
+        .filter-label-third {
+            margin-left: 165px;
+            font-weight: bold;
+            /* padding: "20px"; */
+        }
+
+        .filter-label-fourth {
+            margin-left: 140px;
             font-weight: bold;
             /* padding: "20px"; */
         }
 
         /* Style for search button */
         .search-button {
+            margin-left: 140px;
             background-color: #3498db;
             color: #fff;
             border: none;
@@ -120,18 +147,20 @@
 <body>
     <div class="container">
         {% csrf_token %}
-        <h2>Property Listing</h2>
-        <a class="dashboard-button" href="/dashboard">Dashboard</a>
-        <a class="logout-button" href="/logout">Logout</a>
+        <div>
+            <h2 style="margin-top: 50px;">Property Listing</h2>
+            <a class="dashboard-button" href="/dashboard">Dashboard</a>
+            <a class="logout-button" href="/logout">Logout</a>
+        </div>
         
         <!-- Filters Section -->
         <div class="filter-container">
-            <h3>Filters:</h3>
+            <h3 style="margin-left:300px; text-shadow: #1e6aae;text-underline-position: auto;font-size: 30px;">Advanced Search:</h3>
             
-            <label class="filter-label" for="filter-city">City:</label>
+            <label class="filter-label"  for="filter-city">City:</label>
             <input type="text" id="filter-city" placeholder="Enter city name">
             
-            <label class="filter-label" for="filter-state">State:</label>
+            <label class="filter-label-third" for="filter-state">State:</label>
             <select id="filter-state">
                 <!-- Add options dynamically based on available states -->
                 <option value="">All</option>
@@ -171,7 +200,7 @@
                 <option value="Puducherry">Puducherry</option>
                 <!-- Add more options as needed -->
             </select>
-
+            <br></br>
             <label class="filter-label" for="filter-facilities">Facilities:</label>
             <select id="filter-facilities">
                 <!-- Add options dynamically based on available facilities -->
@@ -183,7 +212,7 @@
                 <!-- Add more options as needed -->
             </select>
 
-            <label class="filter-label" for="filter-type">Contract Type:</label>
+            <label class="filter-label-second" for="filter-type">Contract Type:</label>
             <select id="filter-type">
                 <!-- Add options dynamically based on available types -->
                 <option value="">All</option>
@@ -194,7 +223,9 @@
             <br></br>
             <label class = "filter-label" for="availability-from">Available From:</label>
             <input type="date" id="filter-availability-from" name="availability-from">
-
+            <label class = "filter-label-fourth" for="availability-till">Available Till:</label>
+            <input type="date" id="filter-availability-till" name="availability-till">
+            <br></br>
             <label class="filter-label" for="filter-price">Max Price(in Rs.):</label>
             <input type="number" id="filter-price" placeholder="Enter max price">
             <button type="button" class="search-button" id="search-button">Search</button>
@@ -214,7 +245,7 @@
                         <th>STATE</th>
                         <th>Contract Type</th>
                         <th>Available from</th>
-                        <th>Available to</th>
+                        <th>Available till</th>
                         <th>Price (in Rs.)</th>
                         <th>Facilities</th>
                     </tr>
@@ -249,6 +280,8 @@
         const filterType = document.getElementById('filter-type');
         const filterPrice = document.getElementById('filter-price');
         const filterStartingDate = document.getElementById('filter-availability-from');
+        const filterEndingDate = document.getElementById('filter-availability-till');
+        // console.log(filterEndingDate.value)
         // console.log(filterStartingDate.value === '')
 
         // Function to filter and search results
@@ -259,6 +292,8 @@
             const contractType = filterType.value;
             const maxPrice = filterPrice.value;
             const startingDate = filterStartingDate.value;
+            const endingDate = filterEndingDate.value;
+            // console.log(endingDate)
             // console.log("STARTING DATE FILTER: " + startingDate)
             // console.log(city + " " + state + " " + facilities + " " + contractType + " " + maxPrice + " " + startingDate)
             const properties_json_data = JSON.parse(document.getElementById('properties_json').textContent)
@@ -298,10 +333,12 @@
                         "Dec.": 12
                     };
                     var month = monthMapping[parts[0]];
+                    // console.log("Month:" + month)
                     var day = parseInt(parts[1], 10);
                     var year = parseInt(parts[2], 10);
-                    // console.log(day, month, year);
+                    // console.log("dd-mm-yyy:" +day+"-" + month +"-" + year);
                     var dateString = year.toString() + "-" + month.toString() + "-" + day.toString();
+                    // console.log("dateString:", dateString)
                     return dateString;
                     // console.log(dateString);
                     // var formattedDate = new Date(year, month, day);
@@ -312,13 +349,19 @@
                 // console.log("DATE CURRENT: " )
                 // console.log("DATE: " + cells[7].textContent )
                 var existingDate = '';
-                if(cells[7].textContent !== 'None'){
+                if(cells[7].textContent != 'None' && cells[7].textContent!== ''){
+                    // console.log(cells[7].textContent)
+                    // console.log(typeof cells[7].textContent)
+                    // console.log(cells[7].textContent == 'None')
                     existingDate = parseDate(cells[7].textContent)
                     // console.log(existingDate);
                 }
                 available_from_flag = false;
-                if(existingDate !== ''){
-                    // console.log(existingDate + " : " + startingDate);
+                if(startingDate == ''){
+                    available_from_flag = true;
+                }
+                if(existingDate !== '' && startingDate!== ''){
+                    console.log(existingDate + " : " + startingDate);
                     // Existing Date -> date of the property:
                     existing_parts = existingDate.split('-');
                     filter_parts = startingDate.split('-');
@@ -343,6 +386,42 @@
                     available_from_flag = true;
                 }
 
+                // filter for ending-date
+                var existingEndingDate = '';
+                if(cells[8].textContent != 'None' && cells[8].textContent !== ''){
+                    existingEndingDate = parseDate(cells[8].textContent)
+                    // console.log(existingDate);
+                }
+                available_till_flag = false;
+                if(endingDate == ''){
+                    available_till_flag = true;
+                }
+                if(existingEndingDate !== '' && endingDate !== ''){
+                    console.log(existingEndingDate + " : " + endingDate);
+                    // Existing Date -> date of the property:
+                    existingEnding_parts = existingEndingDate.split('-');
+                    filterEnding_parts = endingDate.split('-');
+                    // console.log(existingEnding_parts + ' : ' +filterEnding_parts)
+                    // yyyy - mm - dd
+                    if(parseFloat(existingEnding_parts[0]) < parseFloat(filterEnding_parts[0])){
+                        // console.log("hi1");
+                        available_till_flag = true;
+                    }else{
+                        if((parseFloat(existingEnding_parts[0]) == parseFloat(filterEnding_parts[0])) && (parseFloat(existingEnding_parts[1]) < parseFloat(filterEnding_parts[1]))){
+                            // console.log("hi2");
+                            available_till_flag = true;
+                        }
+                        else{
+                            if((parseFloat(existingEnding_parts[0]) == parseFloat(filterEnding_parts[0])) && (parseFloat(existingEnding_parts[1]) == parseFloat(filterEnding_parts[1])) && (parseFloat(existingEnding_parts[2]) <= parseFloat(filterEnding_parts[2]))){
+                                // console.log("hi3");
+                                available_till_flag = true;
+                            }
+                        }
+                    }
+                }else{
+                    available_till_flag = true;
+                }
+
                 // Applying Filters: 
                 if (
                     (city !== '' && cells[3].textContent.toLowerCase() !== city.toLowerCase()) ||
@@ -350,7 +429,8 @@
                     (facilities !== '' && cells[10].textContent.toLowerCase()!== facilities.toLowerCase()) || 
                     (contractType !== '' && cells[6].textContent.toLowerCase()!== contractType.toLowerCase()) ||
                     (maxPrice !== '' && parseFloat(cells[9].textContent) > parseFloat(maxPrice)) ||
-                    (existingDate !== '' && available_from_flag === false && startingDate !== '' )
+                    (existingDate !== '' && available_from_flag === false && startingDate !== '' ) ||
+                    (existingEndingDate !== '' && available_till_flag === false && endingDate !== '' ) 
                 ) {
                     row.style.display = 'none';
                 }else {
