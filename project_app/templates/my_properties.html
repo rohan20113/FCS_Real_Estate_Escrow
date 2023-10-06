@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -98,7 +99,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <!-- <th>ID</th> -->
                         <th>Address Line-1</th>
                         <th>Address Line-2</th>
                         <th>City</th>
@@ -116,7 +117,7 @@
                 <tbody>
                     {% for property in properties %}
                     <tr>
-                        <td>{{ property.id }}</td>
+                        <!-- <td>{{ property.id }}</td> -->
                         <td>{{ property.address_line_1 }}</td>
                         <td>{{ property.address_line_2 }}</td>
                         <td>{{ property.city }}</td>
@@ -128,10 +129,14 @@
                         <td>{{ property.price }}</td>
                         <td>{{ property.facilities }}</td>
                         <td>
-                            <a href="/edit_property/{{property.id}}">Edit</a>
+                            <a href="/edit_property/{{property.id}}">
+                                <img src ="{% static 'edit_icon_2.png' %}" alt="Edit Property">
+                            </a>
                         </td>
                         <td>
-                            <a href="/delete_property/{{property.id}}">Delete</a>
+                            <a href="/delete_property/{{property.id}}">
+                                <img src ="{% static 'delete_icon_2.png' %}" alt="Delete Property">
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
