@@ -17,8 +17,8 @@ def shrink_image(input_path, output_path, max_size=(40, 40), quality=85):
         return False
 
 if __name__ == "__main__":
-    input_path = "delete_icon.png"  # Replace with the path to your uploaded image
-    output_path = "delete_icon_2.png"  # Replace with the desired output path
+    input_path = "delete_icon2.png"  # Replace with the path to your uploaded image
+    output_path = "delete_icon2.png"  # Replace with the desired output path
     
     if shrink_image(input_path, output_path):
         print("Image successfully resized and compressed.")
