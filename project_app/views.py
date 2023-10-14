@@ -330,8 +330,18 @@ def display_property_applications(request, id):
     if(username is None):
         return redirect('/')
 
-    # property = Property.objects.get(id = id)
+    # accepted_applications = PropertyApplications.objects.filter(property_id=id, status='ACCEPTED')
+    accepted_applications = []
     applications = list(PropertyApplications.objects.values())
+    for i in range(len(applications)):
+        if(applications[i]['property_id'] == id and applications[i]['status'] == 'ACCEPTED'):
+            accepted_applications.append(applications[i])
+            break
+    if(len(accepted_applications) != 0):
+        # print("PROPERTY ACCEPTED APPLICATION")
+        return render(request, 'accepted_property_application.html', {'applications':accepted_applications})
+
+    # property = Property.objects.get(id = id)
     current_applications = []
     for i in range(len(applications)):
         if(applications[i]['property_id'] == id and applications[i]['status'] == 'PENDING'):
@@ -339,7 +349,7 @@ def display_property_applications(request, id):
 
     # No pending requests 
     if(len(current_applications) == 0):
-        print('NO APPLICATIONS AVAILABLE')
+        # print('NO APPLICATIONS AVAILABLE')
         messages.info(request, 'No Pending Requests')
         return redirect('/my_properties')
     
@@ -370,9 +380,29 @@ def reject_property_application(request, id):
             return redirect(current_url)
 
     # If none, return to my_properties page.
-    return redirect('/my_properties')
+    return redirect('my_properties_page')
 
 def accept_property_application(request, id):
     username = request.session.get('username')
     if(username is None):
         return redirect('/')
+    
+    # fetching the object
+    current_application = PropertyApplications.objects.get(id = id)
+    current_property = current_application.property_id
+
+    # PAYMENT GATEWAY & EKYC NEEDS TO PERFORMED HERE
+
+    # Changing the current request's status
+    current_application.status = 'ACCEPTED'
+    current_application.save()
+    messages.info(request, 'Succesfully Updated Request')
+    
+    # Rejecting all other pending requests.
+    applications = PropertyApplications.objects.filter(property_id=current_property, status='PENDING')
+    for application in applications:
+        application.status = 'REJECTED'
+        application.save()
+    
+    messages.info(request, "Application Accepted!\n Please Wait for Payment.")
+    return redirect('my_properties_page')
