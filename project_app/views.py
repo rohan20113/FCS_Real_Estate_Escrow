@@ -131,8 +131,12 @@ def dashboard_user(request):
         return render(request, 'dashboard.html', {'user': current_user})
         
 def dashboard_user_list(request):
-    users = AppUser.objects.all()
-    return render(request, 'user_list.html', {'users':users})
+    users = list(AppUser.objects.values())
+    user_list = []
+    for i in range(len(users)):
+        if(users[i]['username'] != request.session.get('username')):
+            user_list.append(users[i])
+    return render(request, 'user_list.html', {'users':user_list})
 
 def add_property(request):
     username = request.session.get('username')
@@ -232,11 +236,11 @@ def update_property(request, id):
     property = Property.objects.get(id=id)
     if request.method =="POST":
         property_instance = get_object_or_404(Property, pk = id)
-        input_addr_l1 = request.POST['address-line-1']
-        input_addr_l2 = request.POST['address-line-2']
-        input_city = request.POST['city']
-        input_pin_code = request.POST['pin-code']
-        input_state = request.POST['state']
+        # input_addr_l1 = request.POST['address-line-1']
+        # input_addr_l2 = request.POST['address-line-2']
+        # input_city = request.POST['city']
+        # input_pin_code = request.POST['pin-code']
+        # input_state = request.POST['state']
         input_contract_type = request.POST['contract-type']
         input_facilities = request.POST['facilities']
         input_contract_type = request.POST['contract-type']
@@ -251,12 +255,12 @@ def update_property(request, id):
         # Date fields
         if(input_contract_type == 'RENT'):
             # property_instance.owner = input_owner
-            property_instance.address_line_1 = input_addr_l1
-            property_instance.address_line_2 = input_addr_l2
-            property_instance.state = input_state
-            property_instance.city = input_city
-            property_instance.pincode = input_pin_code
-            property_instance.type = input_contract_type
+            # property_instance.address_line_1 = input_addr_l1
+            # property_instance.address_line_2 = input_addr_l2
+            # property_instance.state = input_state
+            # property_instance.city = input_city
+            # property_instance.pincode = input_pin_code
+            # property_instance.type = input_contract_type
             property_instance.starting_date = input_availability_from
             property_instance.ending_date = input_availability_till
             property_instance.price = input_price
@@ -266,11 +270,11 @@ def update_property(request, id):
         # print(input_availability_from, input_availability_till)
         # Creating the object
         else:
-            property_instance.address_line_1 = input_addr_l1
-            property_instance.address_line_2 = input_addr_l2
-            property_instance.state = input_state
-            property_instance.city = input_city
-            property_instance.pincode = input_pin_code
+            # property_instance.address_line_1 = input_addr_l1
+            # property_instance.address_line_2 = input_addr_l2
+            # property_instance.state = input_state
+            # property_instance.city = input_city
+            # property_instance.pincode = input_pin_code
             property_instance.type = input_contract_type
             property_instance.starting_date = None
             property_instance.ending_date = None

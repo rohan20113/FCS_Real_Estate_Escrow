@@ -88,23 +88,23 @@
     <div class="container">
         <a class="go-to-dashboard-button" href="/dashboard">DASHBOARD</a>
         <a class="go-to-dashboard-button" href="/my_properties">MY PROPERTIES</a>
-        <h2>Add Property</h2>
+        <h2>Modify Property Details</h2>
         <form action="/update_property/{{property.id}}" method="post">
             {% csrf_token %}
-            <label for="address-line-1">Address Line-1:</label>
-            <input type="text" id="address-line-1" name="address-line-1" required maxlength="30" value="{{property.address_line_1}}">
+            <label for="address-line-1">{{property.address_line_1}}</label>
+            <!-- <input type="text" id="address-line-1" name="address-line-1" required maxlength="30" value="{{property.address_line_1}}"> -->
             
-            <label for="address-line-2">Address Line-2:</label>
-            <input type="text" id="address-line-2" name="address-line-2" maxlength="30" value="{{property.address_line_2}}">
+            <label for="address-line-2">{{property.address_line_2}}</label>
+            <!-- <input type="text" id="address-line-2" name="address-line-2" maxlength="30" value="{{property.address_line_2}}"> -->
             
-            <label for="city">City:</label>
-            <input type="text" id="city" name="city" required maxlength="30" value="{{property.city}}">
+            <label for="city">City: {{property.city}}</label>
+            <!-- <input type="text" id="city" name="city" required maxlength="30" value="{{property.city}}"> -->
             
-            <label for="pin-code">PIN-CODE:</label>
-            <input type="text" id="pin-code" name="pin-code" required pattern="[0-9]{6}" value="{{property.pincode}}">
+            <label for="pin-code">PIN-CODE: {{property.pincode}}</label>
+            <!-- <input type="text" id="pin-code" name="pin-code" required pattern="[0-9]{6}" value="{{property.pincode}}"> -->
             
-            <label for="state">State:</label>
-            <select id="state" name="state" value="{{property.state}}" required >
+            <label for="state">State: {{property.state}}</label>
+            <!-- <select id="state" name="state" value="{{property.state}}" required >
                 <option value="Andhra Pradesh">Andhra Pradesh</option>
                 <option value="Arunachal Pradesh">Arunachal Pradesh</option>
                 <option value="Assam">Assam</option>
@@ -139,8 +139,9 @@
                 <option value="Delhi">Delhi</option>
                 <option value="Lakshadweep">Lakshadweep</option>
                 <option value="Puducherry">Puducherry</option>
-            </select>
-
+            </select> -->
+            <br></br>
+            <br></br>
             <label for="contract-type">Contract Type:</label>
             <span class="radio-label" >
                 <input type="radio" id="sell" name="contract-type" value="SELL" required>
@@ -204,17 +205,17 @@
 
     <script>
         // Setting the state value
-        var selectElement = document.getElementById("state");
-        var existingState = "{{property.state}}";
-        for (var i = 0; i < selectElement.options.length; i++) {
-            // console.log(selectElement.options[i].value)
-            // console.log(existingState)
-            if (selectElement.options[i].value === existingState) {
-                // console.log(true);
-                selectElement.options[i].selected = true;
-                break; 
-            }
-        }
+        // var selectElement = document.getElementById("state");
+        // var existingState = "{{property.state}}";
+        // for (var i = 0; i < selectElement.options.length; i++) {
+        //     // console.log(selectElement.options[i].value)
+        //     // console.log(existingState)
+        //     if (selectElement.options[i].value === existingState) {
+        //         // console.log(true);
+        //         selectElement.options[i].selected = true;
+        //         break; 
+        //     }
+        // }
         // Setting the facilities value
         var selectElement = document.getElementById("facilities");
         var existingFacilities = "{{property.facilities}}";
