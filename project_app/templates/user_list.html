@@ -11,7 +11,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 20px auto;
             padding: 20px;
             border: 2px solid #3498db;
@@ -32,6 +32,21 @@
         .navbar h2 {
             color: #fff;
             margin: 0;
+        }
+
+        .dashboard-button {
+            /* position: absolute; */
+            top: 35px;
+            margin-left: 530px;
+            right: 150px; /* Position the "Dashboard" button to the left */
+            background-color: #6034db;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
         }
 
         .logout-button {
@@ -74,7 +89,8 @@
     <div class="container">
         <div class="navbar">
             <h2>User Dashboard</h2>
-            <a class="logout-button" href="/">Logout</a>
+            <a class="dashboard-button" href="/admin_dashboard">Dashboard</a>
+            <a class="logout-button" href="/logout">Logout</a>
         </div>
         <table>
             <thead>
@@ -84,6 +100,8 @@
                     <th>Last Name</th>
                     <th>Contact</th>
                     <th>Email</th>
+                    <th>Public Key</th>
+                    <th>Balance</th>
                 </tr>
             </thead>
             <tbody>
@@ -94,6 +112,8 @@
                     <td>{{ user.second_name }}</td>
                     <td>{{ user.contact }}</td>
                     <td>{{ user.email }}</td>
+                    <td>{{ user.public_key }}</td>
+                    <td>{{ user.balance }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

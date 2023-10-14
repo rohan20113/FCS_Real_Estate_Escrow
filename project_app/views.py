@@ -92,7 +92,7 @@ def dashboard_admin(request):
         username = request.session.get('username')
         # print(username)
         if(username is None):
-            return redirect('/')
+            return redirect('/')    
     else:
         username = request.session.get('username')
         # print(username)
@@ -131,10 +131,15 @@ def dashboard_user(request):
         return render(request, 'dashboard.html', {'user': current_user})
         
 def dashboard_user_list(request):
+    username = request.session.get('username')
+    if(username is None):
+        return redirect('/')
+    request.session['username'] = username
     users = list(AppUser.objects.values())
     user_list = []
     for i in range(len(users)):
         if(users[i]['username'] != request.session.get('username')):
+            # print(users[i])
             user_list.append(users[i])
     return render(request, 'user_list.html', {'users':user_list})
 

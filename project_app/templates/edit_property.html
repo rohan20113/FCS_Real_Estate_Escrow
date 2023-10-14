@@ -188,6 +188,8 @@
                     var price_element = document.getElementById('price');
                     price_element.setAttribute("max","5100000");
                 } else {
+                    var price_element = document.getElementById('price');
+                    price_element.setAttribute("max","1000000000");
                     dateFields.style.display = 'none';
                 }
             });    
@@ -239,6 +241,8 @@
         if(existingType.toLocaleLowerCase() == 'sell'){
             // Update the radio button
             sellContract.checked = true;
+            price_element = document.getElementById('price');
+            price_element.setAttribute("max","1000000000");
             var startingDate = document.getElementById("availability-from")
             startingDate.value = new Date("0000-00-00");
             var endingDate = document.getElementById("availability-till")

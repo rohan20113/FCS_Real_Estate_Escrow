@@ -11,7 +11,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 20px auto;
             padding: 20px;
             border: 2px solid #3498db;
@@ -46,9 +46,10 @@
         }
 
         .user_list-button {
-            background-color: #3ce753;
+            background-color: #6d3ce7;
             color: #fff;
             border: none;
+            margin-left: 570px;
             padding: 10px 5px;
             font-size: 16px;
             border-radius: 5px;
@@ -87,7 +88,7 @@
         <div class="navbar">
             <h2>User Dashboard</h2>
             <a class="user_list-button" href="/users_list">Users</a>
-            <a class="logout-button" href="/">Logout</a>
+            <a class="logout-button" href="/logout">Logout</a>
         </div>
         <table>
             <thead>
@@ -116,6 +117,10 @@
                 <tr>
                     <td>Email:</td>
                     <td>{{ user.email }}</td>
+                </tr>
+                <tr>
+                    <td>Public Key:</td>
+                    <td>{{ user.public_key }}</td>
                 </tr>
             </tbody>
         </table>
