@@ -233,7 +233,16 @@
             <!-- <a class="search-button" href="/search_properties">Search</a> -->
             
         </div>
-        
+        <!-- Display messages below the form -->
+        <div class="message-container">
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
         <div class="scroll-container">
             <table>
                 <thead>
@@ -249,6 +258,7 @@
                         <th>Available till</th>
                         <th>Price (in Rs.)</th>
                         <th>Facilities</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -265,6 +275,9 @@
                         <td>{{ property.ending_date }}</td>
                         <td>{{ property.price }}</td>
                         <td>{{ property.facilities }}</td>
+                        <td>
+                            <a href="/apply_property_deal/{{property.id}}">Apply</a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

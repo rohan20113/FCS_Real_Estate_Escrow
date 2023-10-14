@@ -13,7 +13,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 900px;
             margin: 20px auto;
             padding: 20px;
             border: 2px solid #3498db;
@@ -93,6 +93,20 @@
             cursor: pointer;
             text-decoration: none;
         }
+        .my-properties-button {
+            position: absolute;
+            margin-left: 480px;
+            top: 35px;
+            /* right: 150px; Position the "Dashboard" button to the left */
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
 
         /* Style for button hover */
         .logout-button:hover {
@@ -105,70 +119,34 @@
     </style>
 </head>
 <body>
-    
     <div class="container">
         {% csrf_token %}
-        <h2>Property Listing</h2>
-        <a class="dashboard-button" href="/dashboard">Dashboard</a> <!-- Dashboard button -->
-        <a class="logout-button" href="/logout">Logout</a> <!-- Logout button -->
-        <a class="add-property-button" href="/add_property">Add A property</a> 
-        <!-- Display messages below the form -->
-        <div class="message-container">
-            {% if messages %}
-                <ul class="messages">
-                    {% for message in messages %}
-                        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </div>
+        <h2>Pending Requests</h2>
+        <a class="my-properties-button" href="/my_properties">My Properties</a> 
+        <a class="dashboard-button" href="/dashboard">Dashboard</a> 
+        <a class="logout-button" href="/logout">Logout</a>
         <div class="scroll-container">
             <table>
                 <thead>
                     <tr>
-                        <!-- <th>ID</th> -->
-                        <th>Address Line-1</th>
-                        <th>Address Line-2</th>
-                        <th>City</th>
-                        <th>PIN-CODE</th>
-                        <th>STATE</th>
-                        <th>Contract Type</th>
-                        <th>Available from</th>
-                        <th>Available to</th>
-                        <th>Price (in Rs.)</th>
-                        <th>Facilities</th>
-                        <th>Pending Requests</th>
-                        <th>Modify</th>
-                        <th>Delete</th>
+                        <th>Party User-Name</th>
+                        <th>Accept Application</th>
+                        <th>Reject Application</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for property in properties %}
+                    {% for application in applications %}
                     <tr>
                         <!-- <td>{{ property.id }}</td> -->
-                        <td>{{ property.address_line_1 }}</td>
-                        <td>{{ property.address_line_2 }}</td>
-                        <td>{{ property.city }}</td>
-                        <td>{{ property.pincode }}</td>
-                        <td>{{ property.state }}</td>
-                        <td>{{ property.type }}</td>
-                        <td>{{ property.starting_date }}</td>
-                        <td>{{ property.ending_date }}</td>
-                        <td>{{ property.price }}</td>
-                        <td>{{ property.facilities }}</td>
+                        <td>{{ application.interested_user }}</td>
                         <td>
-                            <a href="/display_property_applications/{{property.id}}">
-                                <img src ="{% static 'notification_icon.jpg' %}" alt="Display Applications">
+                            <a href="/approve_property_application/{{application.id}}">
+                                <img src ="{% static 'accept_icon.jpg' %}" alt="Accept_Application">
                             </a>
                         </td>
                         <td>
-                            <a href="/edit_property/{{property.id}}">
-                                <img src ="{% static 'edit_icon5.png' %}" alt="Edit Property">
-                            </a>
-                        </td>
-                        <td>
-                            <a href="/delete_property/{{property.id}}">
-                                <img src ="{% static 'delete_icon4.png' %}" alt="Delete Property">
+                            <a href="/reject_property_application/{{application.id}}">
+                                <img src ="{% static 'reject_icon.jpg' %}" alt="Reject_Application">
                             </a>
                         </td>
                     </tr>
@@ -178,17 +156,6 @@
         </div>
     </div>
 
-    {{ properties|json_script:"properties_json"}}
-    
-    <!-- <script>
-        const properties_json_data = JSON.parse(document.getElementById('properties_json').textContent)
-        function deleteProperty(index) {
-            console.log(index + ": " + properties_json_data[index].id);
-        }
-
-        function editProperty(index){
-            console.log(index + ": " + properties_json_data[index].id);
-        }
-    </script> -->
+    <!-- {{ applications|json_script:"applications_json"}} -->
 </body>
 </html>

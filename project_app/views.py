@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .models import AppUser, Property
+from .models import AppUser, Property, PropertyApplications
 from django.contrib import messages
 from django.contrib.auth.models import User, auth
 from django.views.decorators.csrf import csrf_exempt
@@ -303,3 +303,70 @@ def delete_property(request, id):
 def logout_user(request):
     request.session.flush()
     return redirect('/')
+
+def apply_property_deal(request, id):
+    username = request.session.get('username')
+    if(username is None):
+        return redirect('/')
+    property_selected = Property.objects.get(id=id)
+    property_owner_username = Property.owner
+
+    # Check if no existing row/copy is there:
+    applications = list(PropertyApplications.objects.values())
+    for i in range(len(applications)):
+        if(applications[i]['property_id'] == id and applications[i]['status'] == 'PENDING'):
+            if(applications[i]['interested_user'] == username):
+                messages.info(request, 'Pending Request Already Exists')
+                return redirect('search_properties_page')
+            
+    # Now, we've to add this pending request for the given property.
+    application = PropertyApplications.objects.create(property_id = id, interested_user = username)
+    application.save()
+    messages.info(request, 'Application Sent Successfully!')
+    return redirect('search_properties_page')
+
+def display_property_applications(request, id):
+    username = request.session.get('username')
+    if(username is None):
+        return redirect('/')
+
+    # property = Property.objects.get(id = id)
+    applications = list(PropertyApplications.objects.values())
+    current_applications = []
+    for i in range(len(applications)):
+        if(applications[i]['property_id'] == id and applications[i]['status'] == 'PENDING'):
+            current_applications.append(applications[i])
+
+    # No pending requests 
+    if(len(current_applications) == 0):
+        print('NO APPLICATIONS AVAILABLE')
+        messages.info(request, 'No Pending Requests')
+        return redirect('/my_properties')
+    
+    # If pending requests exist:
+    return render(request, 'display_property_applications.html', {'applications':current_applications})
+
+def reject_property_application(request, id):
+    username = request.session.get('username')
+    if(username is None):
+        return redirect('/')
+    
+    # fetching the object
+    current_application = PropertyApplications.objects.get(id = id)
+    # current_property = current_application.get('property_id')
+    # Changing the request's status
+    current_application.status = 'REJECTED'
+    current_application.save()
+    messages.info(request, 'Succesfully Updated Request')
+    
+    # # Find if more pending requests are there.
+    # applications = list(PropertyApplications.objects.values())
+    # for i in range(len(applications)):
+    #     if(applications[i]['property_id'] == current_property and applications[i]['status'] == 'PENDING'):
+    #         return redirect('display_property_applications_page/{current_property}')
+
+    # If none, return to my_properties page.
+    return redirect('/my_properties')
+
+def approve_property_application(request, id):
+    pass

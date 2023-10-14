@@ -18,4 +18,8 @@ urlpatterns = [
     path("update_property/<int:id>", views.update_property),
     path("edit_property/<int:id>", views.edit_property, name = "edit_property_page"),
     path("delete_property/<int:id>", views.delete_property),
+    path("apply_property_deal/<int:id>", views.apply_property_deal),
+    path("display_property_applications/<int:id>", views.display_property_applications, name = 'display_property_applications_page'),
+    path("approve_property_application/<int:id>", views.approve_property_application),
+    path("reject_property_application/<int:id>", views.reject_property_application),
 ]

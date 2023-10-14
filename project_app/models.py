@@ -65,3 +65,8 @@ class RentalsContract(models.Model):
 
     def __str__(self):
         return f"{self.contract_id} {self.property_id} {self.party_user_name} {self.party_type} {self.duration} {self.price} {self.date_of_contract}"
+    
+class PropertyApplications(models.Model):
+    property_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = False) 
+    interested_user = models.CharField(max_length=30,  null= False, blank=False, default = False)
+    status = models.CharField(max_length=15, null = False, blank = False, default = "PENDING")
