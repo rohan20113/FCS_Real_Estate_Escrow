@@ -160,7 +160,7 @@
             </div>
             
             <label for="price">Price (in Rs.):</label>
-            <input type="number" id="price" name="price" required value="{{property.price}}">
+            <input type="number" id="price" name="price" required value="{{property.price}}" max="1000000000">
             
             <label for="facilities">Facilities (Select one):</label>
             <select id="facilities" name="facilities" required value="{{property.facilities}}">
@@ -178,11 +178,14 @@
         const contractType = document.querySelectorAll('input[name="contract-type"]');
         const dateFields = document.querySelector('.date-fields');
 
+        
+
         contractType.forEach(function (radio) {
             radio.addEventListener('change', function () {
                 if (this.value === 'RENT') {
                     dateFields.style.display = 'block';
-                    
+                    var price_element = document.getElementById('price');
+                    price_element.setAttribute("max","5100000");
                 } else {
                     dateFields.style.display = 'none';
                 }
@@ -243,6 +246,8 @@
         else{
             // Update the radio button corresponding to rent 
             rentContract.checked = true;
+            price_element = document.getElementById('price');
+            price_element.setAttribute("max","5100000");
             // Update the dates
             const dateFields = document.querySelector('.date-fields');
             dateFields.style.display = 'block';

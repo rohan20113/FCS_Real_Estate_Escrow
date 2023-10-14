@@ -159,7 +159,7 @@
             </div>
             
             <label for="price">Price (in Rs.):</label>
-            <input type="number" id="price" name="price" required>
+            <input type="number" id="price" name="price" required max="1000000000">              
             
             <label for="facilities">Facilities (Select one):</label>
             <select id="facilities" name="facilities" required>
@@ -180,7 +180,8 @@
             radio.addEventListener('change', function () {
                 if (this.value === 'RENT') {
                     dateFields.style.display = 'block';
-                    
+                    var price_element = document.getElementById('price');
+                    price_element.setAttribute("max","5100000");
                 } else {
                     dateFields.style.display = 'none';
                 }

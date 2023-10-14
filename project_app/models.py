@@ -11,6 +11,9 @@ class AppUser(models.Model):
     password = models.CharField(max_length=30, null= False, blank=False, default = None)
     email = models.CharField(max_length=30, null= False, blank=False, default = None)
     contact = models.CharField(max_length=30, null= False, blank=False, default = None)
+    # public_key = models.CharField(max_length=256, null = True, blank = True, default = None)
+    # balance = models.DecimalField(decimal_places=0, max_digits=15, null = True, blank = True, default= 0)
+
 
     def __str__(self):
         return f"{self.first_name} {self.second_name} {self.username} {self.password} {self.email} {self.contact}"
@@ -27,7 +30,7 @@ class Property(models.Model):
     # YYYY-MM-DD
     starting_date = models.DateField(null = True, blank = True, default= None)
     ending_date = models.DateField(null = True, blank = True, default= None)
-    price = models.DecimalField(decimal_places=0, max_digits=12, null = True, blank = True, default= 0)
+    price = models.DecimalField(decimal_places=0, max_digits=10, null = True, blank = True, default= 0)
     facilities = models.CharField(max_length=20,  null= False, blank=False, default = None)
 
     def __str__(self):
