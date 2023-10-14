@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment Gateway</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 2px solid #3498db;
+            background-color: #fff;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #3498db;
+            padding: 10px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .navbar h2 {
+            color: #fff;
+            margin: 0;
+        }
+
+        .logout-button {
+            background-color: #e74c3c;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .logout-button:hover {
+            background-color: #c0392b;
+        }
+
+        .button-container {
+            margin-top: 20px;
+        }
+
+        .button-container a.button {
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+
+        .button-container a.button:first-child {
+            margin-left: 0; /* Remove left margin for the first button */
+        }
+
+        .button-container a.button.pay-now {
+            background-color: #3498db; /* Adjust the button style for "Pay Now" */
+            margin-top: 10px; /* Add margin to shift it down */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% csrf_token %}
+        <div class="navbar">
+            <h2>Payment Gateway</h2>
+            <a class="logout-button" href="/logout">Logout</a>
+        </div>
+
+        <div class="button-container">
+            <a class="button">Dashboard</a>
+            <a class="button" href="/my_properties">My Properties</a>
+            <a class="button" href="/search_properties">Search Properties</a>
+            <a class="button pay-now" href="/payment_gateway">Pay Now</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -276,7 +276,7 @@
                         <td>{{ property.price }}</td>
                         <td>{{ property.facilities }}</td>
                         <td>
-                            <a href="/apply_property_deal/{{property.id}}">Apply</a>
+                            <a id = 'action_available' href="/apply_property_deal/{{property.id}}">Apply</a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -285,6 +285,8 @@
         </div>
     </div>
     {{ properties|json_script:"properties_json"}}
+    {{ applications|json_script:"applications_json"}}
+    {{ user|json_script:"user_json"}}
     <!-- JavaScript for filtering and searching -->
     <script>
         // Get references to filter elements
@@ -295,6 +297,7 @@
         const filterPrice = document.getElementById('filter-price');
         const filterStartingDate = document.getElementById('filter-availability-from');
         const filterEndingDate = document.getElementById('filter-availability-till');
+        // console.log(applications_json_data);
         // console.log(filterEndingDate.value)
         // console.log(filterStartingDate.value === '')
 
@@ -310,24 +313,24 @@
             // console.log(endingDate)
             // console.log("STARTING DATE FILTER: " + startingDate)
             // console.log(city + " " + state + " " + facilities + " " + contractType + " " + maxPrice + " " + startingDate)
-            const properties_json_data = JSON.parse(document.getElementById('properties_json').textContent)
+            var properties_json_data = JSON.parse(document.getElementById('properties_json').textContent)
             // console.log(properties_json_data.length)
             // console.log(properties_json_data)
             // Example: Loop through table rows and hide/show based on filters
-            const tableRows = document.querySelectorAll('tbody tr');
+            var tableRows = document.querySelectorAll('tbody tr');
             // console.log((tableRows))
             tableRows.forEach(function (row) {
                 // console.log("HI")
                 
                 // Selecting each cell wihtin the row passed
-                const cells = row.querySelectorAll('td');
+                var cells = row.querySelectorAll('td');
 
                 // Printing each cell data to verify whether even data exists or not. 
                 // cells.forEach(function(cell, index) {
                 //     const cellData = cell.textContent.toLowerCase();
                 //     console.log(`Row ${index + 1}, Cell ${index + 1}:`, cellData);
                 // });
-                const rowData = row.textContent.toLowerCase();
+                var rowData = row.textContent.toLowerCase();
                 // console.log(cells[3].textContent.toLocaleLowerCase());
                 // console.log(city.toLocaleLowerCase());
                 function parseDate(inputDate) {
@@ -456,6 +459,47 @@
         // Add event listener for the search button
         const searchButton = document.getElementById('search-button');
         searchButton.addEventListener('click', filterAndSearch);
+
+        // Updating the Action Buttons:
+        var properties_json_data = JSON.parse(document.getElementById('properties_json').textContent);
+        var applications_json_data = JSON.parse(document.getElementById('applications_json').textContent);
+        var username = JSON.parse(document.getElementById('user_json').textContent)[0].user;
+        // console.log(applications_json_data);
+        var accepted_property_applications_property_id = [];
+        var accepted_property_applications_contract_id = {};
+        for(var i=0;i<applications_json_data.length; i++){
+            var data = applications_json_data[i];
+            // console.log(data.interested_user + ' ' + data.status);
+            if(data.interested_user == username && data.status == 'ACCEPTED'){
+                // console.log(typeof data.property_id + data.property_id);
+                accepted_property_applications_property_id.push(data.property_id);
+                accepted_property_applications_contract_id[data.property_id] = data.id;
+            }
+        }
+        // accepted_property_applications_property_id.forEach(function(element) {
+        //     console.log(element);
+        // });
+        // accepted_property_applications_contract_id.forEach(function(element) {
+        //     console.log(typeof element);
+        // });
+        // console.log("NUM_ACCEPTED_APPLICATIONS: " + accepted_property_applications_property_id.length);
+        var tableRows = document.querySelectorAll('tbody tr');
+        tableRows.forEach(function (row, index) {
+            var cells = row.querySelectorAll('td');
+            var rowData = row.textContent.toLowerCase();
+            var current_property_id = properties_json_data[index].id.toString();
+            // console.log(typeof current_property_id + ":" + typeof accepted_property_applications_property_id[0]);
+            if(accepted_property_applications_property_id.includes(current_property_id)){
+                var action_element = row.querySelector('a[id="action_available"]');
+                var current_contract_id = accepted_property_applications_contract_id[current_property_id];
+                // Check if the anchor element exists before making changes
+                if (action_element) {
+                    action_element.textContent = 'PAY'; // Change the text content
+                    // console.log(current_contract_id);
+                    action_element.href = '/payment_gateway/' + current_contract_id; // Change the href
+                }
+            }
+        });
     </script>
 </body>
 </html>

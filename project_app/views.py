@@ -227,7 +227,12 @@ def search_properties(request):
                 my_properties_list.append(properties[i])
         # print("LENGTH:", len(my_properties_list))
         # print("SELECTED LIST:\n", (my_properties_list))
-        return render(request, 'search_properties.html', {'properties':my_properties_list})
+
+        # Fetching property_applications data
+        applications = list(PropertyApplications.objects.values())
+        # print(applications)
+        user_details = [{'user': username}]
+        return render(request, 'search_properties.html', {'properties':my_properties_list, 'applications':applications, 'user': user_details})
     
 
 def edit_property(request, id = id):
@@ -314,6 +319,10 @@ def apply_property_deal(request, id):
     # Check if no existing row/copy is there:
     applications = list(PropertyApplications.objects.values())
     for i in range(len(applications)):
+        if(applications[i]['property_id'] == id and applications[i]['status'] == 'ACCEPTED'):
+            if(applications[i]['interested_user'] == username):
+                messages.info(request, 'Your request has been accepted.\nPlease proceed to pay!')
+                return redirect('search_properties_page')
         if(applications[i]['property_id'] == id and applications[i]['status'] == 'PENDING'):
             if(applications[i]['interested_user'] == username):
                 messages.info(request, 'Pending Request Already Exists')
