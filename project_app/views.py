@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, reverse
 from django.http import HttpResponse
 from .models import AppUser, Property, PropertyApplications
 from django.contrib import messages
@@ -353,20 +353,26 @@ def reject_property_application(request, id):
     
     # fetching the object
     current_application = PropertyApplications.objects.get(id = id)
-    # current_property = current_application.get('property_id')
+    current_property = current_application.property_id
     # Changing the request's status
     current_application.status = 'REJECTED'
     current_application.save()
     messages.info(request, 'Succesfully Updated Request')
     
     # # Find if more pending requests are there.
-    # applications = list(PropertyApplications.objects.values())
-    # for i in range(len(applications)):
-    #     if(applications[i]['property_id'] == current_property and applications[i]['status'] == 'PENDING'):
-    #         return redirect('display_property_applications_page/{current_property}')
+    applications = list(PropertyApplications.objects.values())
+    for i in range(len(applications)):
+        if(applications[i]['property_id'] == current_property and applications[i]['status'] == 'PENDING'):
+            # return redirect('display_property_applications_page/{current_property}')
+            # return redirect(request.path)
+            current_url = reverse('display_property_applications_page', args=[current_property])
+            # messages.info(request, 'Successfully Updated Request')
+            return redirect(current_url)
 
     # If none, return to my_properties page.
     return redirect('/my_properties')
 
-def approve_property_application(request, id):
-    pass
+def accept_property_application(request, id):
+    username = request.session.get('username')
+    if(username is None):
+        return redirect('/')

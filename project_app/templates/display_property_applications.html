@@ -122,10 +122,20 @@
     <div class="container">
         {% csrf_token %}
         <h2>Pending Requests</h2>
-        <a class="my-properties-button" href="/my_properties">My Properties</a> 
         <a class="dashboard-button" href="/dashboard">Dashboard</a> 
+        <a class="my-properties-button" href="/my_properties">My Properties</a> 
         <a class="logout-button" href="/logout">Logout</a>
         <div class="scroll-container">
+            <!-- Display messages below the form -->
+            <div class="message-container">
+                {% if messages %}
+                    <ul class="messages">
+                        {% for message in messages %}
+                            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
             <table>
                 <thead>
                     <tr>
@@ -140,7 +150,7 @@
                         <!-- <td>{{ property.id }}</td> -->
                         <td>{{ application.interested_user }}</td>
                         <td>
-                            <a href="/approve_property_application/{{application.id}}">
+                            <a href="/accept_property_application/{{application.id}}">
                                 <img src ="{% static 'accept_icon.jpg' %}" alt="Accept_Application">
                             </a>
                         </td>
