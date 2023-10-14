@@ -415,3 +415,15 @@ def accept_property_application(request, id):
     
     messages.info(request, "Application Accepted!\n Please Wait for Payment.")
     return redirect('my_properties_page')
+
+def payment_gateway(request, id):
+    username = request.session.get('username')
+    if(username is None):
+        return redirect('/')
+    
+    current_application = PropertyApplications.objects.get(id = id)
+    current_user = AppUser.objects.filter(username = username)
+    print("BALANCE: ",current_user)
+    # NEED TO CREATE ALL USERS WITH A BALANCE AT THE TIME OF CREATING THE USER (query).
+    # CHECK THE BALANCE and then move further.
+    return redirect('search_properties_page')

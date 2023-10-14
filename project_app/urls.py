@@ -22,4 +22,5 @@ urlpatterns = [
     path("display_property_applications/<int:id>", views.display_property_applications, name = 'display_property_applications_page'),
     path("accept_property_application/<int:id>", views.accept_property_application ),
     path("reject_property_application/<int:id>", views.reject_property_application),
+    path("payment_gateway/<int:id>", views.payment_gateway, name = 'payment_gateway_page'),
 ]

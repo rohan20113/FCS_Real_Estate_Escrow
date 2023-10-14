@@ -466,20 +466,20 @@
         var username = JSON.parse(document.getElementById('user_json').textContent)[0].user;
         // console.log(applications_json_data);
         var accepted_property_applications_property_id = [];
-        var accepted_property_applications_contract_id = {};
+        var accepted_property_applications_application_id = {};
         for(var i=0;i<applications_json_data.length; i++){
             var data = applications_json_data[i];
             // console.log(data.interested_user + ' ' + data.status);
             if(data.interested_user == username && data.status == 'ACCEPTED'){
                 // console.log(typeof data.property_id + data.property_id);
                 accepted_property_applications_property_id.push(data.property_id);
-                accepted_property_applications_contract_id[data.property_id] = data.id;
+                accepted_property_applications_application_id[data.property_id] = data.id;
             }
         }
         // accepted_property_applications_property_id.forEach(function(element) {
         //     console.log(element);
         // });
-        // accepted_property_applications_contract_id.forEach(function(element) {
+        // accepted_property_applications_application_id.forEach(function(element) {
         //     console.log(typeof element);
         // });
         // console.log("NUM_ACCEPTED_APPLICATIONS: " + accepted_property_applications_property_id.length);
@@ -491,12 +491,12 @@
             // console.log(typeof current_property_id + ":" + typeof accepted_property_applications_property_id[0]);
             if(accepted_property_applications_property_id.includes(current_property_id)){
                 var action_element = row.querySelector('a[id="action_available"]');
-                var current_contract_id = accepted_property_applications_contract_id[current_property_id];
+                var current_application_id = accepted_property_applications_application_id[current_property_id];
                 // Check if the anchor element exists before making changes
                 if (action_element) {
                     action_element.textContent = 'PAY'; // Change the text content
-                    // console.log(current_contract_id);
-                    action_element.href = '/payment_gateway/' + current_contract_id; // Change the href
+                    // console.log(current_application_id);
+                    action_element.href = '/payment_gateway/' + current_application_id; // Change the href
                 }
             }
         });

@@ -8,7 +8,7 @@ class AppUser(models.Model):
     first_name = models.CharField(max_length=30, null= False, blank=False, default = None)
     second_name = models.CharField(max_length=30, default= None)
     username = models.CharField(max_length=30, null= False, blank=False, default = None)
-    password = models.CharField(max_length=30, null= False, blank=False, default = None)
+    password = models.CharField(max_length=256, null= False, blank=False, default = None)
     email = models.CharField(max_length=30, null= False, blank=False, default = None)
     contact = models.CharField(max_length=30, null= False, blank=False, default = None)
     public_key = models.CharField(max_length=256, null = True, blank = True, default = None)
