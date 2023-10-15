@@ -8,6 +8,7 @@ import hashlib
 from django import forms
 from django.core import serializers
 from django.shortcuts import get_object_or_404
+from datetime import date 
 from django.http import JsonResponse
 # from django.views.decorators.cache import never_cache
 from django.contrib.auth.decorators import login_required
@@ -71,12 +72,11 @@ def register_user(request):
                 messages.info(request, 'Email already EXISTS.')
                 return redirect(register_user)
             else:
-                # print("ROHAN AAGAYA YAHA")
                 hash = hashlib.sha256()
                 hash.update(input_password.encode())
                 input_password = hash.hexdigest()
                 user = AppUser.objects.create(username=input_username, password=input_password, 
-                                        email=input_email, first_name=input_first_name, second_name=input_last_name, contact=input_contact)
+                                        email=input_email, first_name=input_first_name, second_name=input_last_name, contact=input_contact, balance = 10000000, public_key = None)
                 user.save()
                 return redirect('login_page')
         # Passwords unmatched.
@@ -223,7 +223,7 @@ def search_properties(request):
         properties = list(Property.objects.values())
         # print(properties)
         for i in range(len(properties)):
-            if(properties[i]['owner'] !=username):
+            if(properties[i]['owner'] !=username and properties[i]['type'] != 'DELISTED'):
                 my_properties_list.append(properties[i])
         # print("LENGTH:", len(my_properties_list))
         # print("SELECTED LIST:\n", (my_properties_list))
@@ -422,8 +422,80 @@ def payment_gateway(request, id):
         return redirect('/')
     
     current_application = PropertyApplications.objects.get(id = id)
+    # Find the current_user_balance
     current_user = AppUser.objects.filter(username = username)
-    print("BALANCE: ",current_user)
-    # NEED TO CREATE ALL USERS WITH A BALANCE AT THE TIME OF CREATING THE USER (query).
-    # CHECK THE BALANCE and then move further.
+    current_user_balance = current_user[0].balance
+    # print("BALANCE: ",current_user_balance)
+
+    # Find the amount required for the property. (RENTAL -> 12months contract)
+    required_amount = None
+    current_property_id = current_application.property_id
+    property_object = Property.objects.get(id = current_property_id)
+    property_type = property_object.type
+    if(property_type.lower() == 'rent'):
+        required_amount = 12 * property_object.price
+    else:
+        required_amount = property_object.price
+    print("REQUIRED_AMOUNT: ", required_amount, "\nBALANCE AVAILABLE: ", current_user_balance)
+
+    if(required_amount > current_user_balance):
+        messages.info(request, "INSUFFICIENT BALANCE!")
+        return redirect('search_properties_page')
+    
+    payment_contract_details = {'price': required_amount, 'balance':current_user_balance, 'property_id':current_property_id,
+                                'application_id':current_application.id, 'date_of_contract': date.today(), 
+                                'post_balance': current_user_balance-required_amount}
+    if(property_type.lower == 'rent'):
+        payment_contract_details['duration'] = '12 Months' 
+    print(payment_contract_details)
+    return render(request, 'payment_gateway.html', {'contract': payment_contract_details})
+
+def process_payment(request, id):
+    username = request.session.get('username')
+    if(username is None):
+        return redirect('/')
+    
+    # 1. Balance Reduction & Addition (Completed here)
+        # Find the current_user_balance
+    current_user = AppUser.objects.filter(username = username)[0]
+    current_user_balance = current_user.balance
+    
+    current_application = PropertyApplications.objects.get(id =id)
+    current_property_id = current_application.property_id
+    property_object = Property.objects.get(id = current_property_id)
+    required_amount = None
+    current_property_id = current_application.property_id
+    property_object = Property.objects.get(id = current_property_id)
+    property_type = property_object.type
+    if(property_type.lower() == 'rent'):
+        required_amount = 12 * property_object.price
+    else:
+        required_amount = property_object.price
+    # print("REQUIRED_AMOUNT: ", required_amount, "\nBALANCE AVAILABLE: ", current_user_balance)
+        # Updating the balance and saving the database. 
+    current_user.balance = current_user_balance - required_amount
+    current_user.save()
+
+    seller = AppUser.objects.filter(username = property_object.owner)[0]
+    seller.balance = seller.balance + required_amount
+    seller.save()
+
+    # 2. Ownership transfer (in case of sell) & de-list it.
+    if(property_type.lower() == 'sell'):
+        property_object.owner = username
+        property_object.type = 'DELISTED'
+        property_object.save()
+    # 3. If rentals -> property_status (delist it).
+    if(property_type.lower() == 'rent'):
+        property_object.lessee = username
+        property_object.type = 'DELISTED'
+        property_object.save()
+    # 4. Application status change to SUCCESS
+    current_application.status = 'SUCCESS'
+    current_application.save()
+    # 5. Contract Creation.
+        # Step 1: Create Contract (including the signatures)
+        # Step 2: Past history web page date should be obtained from contracts table.
+
+    messages.info(request, "Transaction SUCCESSFUL")
     return redirect('search_properties_page')

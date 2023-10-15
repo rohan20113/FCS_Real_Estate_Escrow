@@ -15,7 +15,7 @@ class AppUser(models.Model):
     balance = models.DecimalField(decimal_places=0, max_digits=15, null = True, blank = True, default= 0)
 
     def __str__(self):
-        return f"{self.first_name} {self.second_name} {self.username} {self.password} {self.email} {self.contact}"
+        return f"{self.first_name} {self.second_name} {self.username} {self.password} {self.email} {self.contact} {self.balance} {self.public_key}"
 
 # appname_modelName
 class Property(models.Model):
