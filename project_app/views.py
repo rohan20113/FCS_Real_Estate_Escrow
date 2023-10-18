@@ -1,17 +1,17 @@
 from django.shortcuts import render, redirect, reverse
-from django.http import HttpResponse
+# from django.http import HttpResponse
 from .models import AppUser, Property, PropertyApplications
 from django.contrib import messages
-from django.contrib.auth.models import User, auth
-from django.views.decorators.csrf import csrf_exempt
+# from django.contrib.auth.models import User, auth
+# from django.views.decorators.csrf import csrf_exempt
 import hashlib
-from django import forms
-from django.core import serializers
+# from django import forms
+# from django.core import serializers
 from django.shortcuts import get_object_or_404
 from datetime import date 
-from django.http import JsonResponse
+# from django.http import JsonResponse
 # from django.views.decorators.cache import never_cache
-from django.contrib.auth.decorators import login_required
+# from django.contrib.auth.decorators import login_required
 # from django.shortcuts import render, redirect
 
 # Create your views here.
