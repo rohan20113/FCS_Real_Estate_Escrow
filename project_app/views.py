@@ -65,7 +65,7 @@ def register_user(request):
         input_first_name = request.POST['firstname']
         input_last_name = request.POST['lastname']
         input_username = request.POST['username']
-        input_email = request.POST['email']
+        # input_email = request.POST['email']
         input_contact = request.POST['contact']
         input_password = request.POST['password']
         input_confirm_password = request.POST['confirm_password']
@@ -74,15 +74,15 @@ def register_user(request):
             if AppUser.objects.filter(username=input_username).exists():
                 messages.info(request, 'Username already EXISTS.')
                 return redirect(register_user)
-            elif AppUser.objects.filter(email=input_email).exists():
-                messages.info(request, 'Email already EXISTS.')
-                return redirect(register_user)
+            # elif AppUser.objects.filter(email=input_email).exists():
+            #     messages.info(request, 'Email already EXISTS.')
+            #     return redirect(register_user)
             else:
                 hash = hashlib.sha256()
                 hash.update(input_password.encode())
                 input_password = hash.hexdigest()
                 user = AppUser.objects.create(username=input_username, password=input_password, 
-                                        email=input_email, first_name=input_first_name, second_name=input_last_name, contact=input_contact, balance = 10000000, public_key = None)
+                                        email=request.session.get('email_kyc'), first_name=input_first_name, second_name=input_last_name, contact=input_contact, balance = 10000000, public_key = None)
                 user.save()
                 return redirect('login_page')
         # Passwords unmatched.
@@ -123,13 +123,20 @@ def ekyc(request):
                     messages.info(request, response_data.get('message'))
                     return redirect('/')
             else:
-                messages.info(request, 'Error Code: {api_response.status_code}')
+                messages.info(request, 'Error Code: {api_response.stat  us_code}')
                 return redirect('/')
         except requests.exceptions.RequestException as e:
             messages.info(request, 'PLEASE TRY AGAIN LATER')
             return redirect('/')
     else:
         # GET REQUEST
+        if(request.session.get('email_kyc') is not None and request.session.get('password_kyc') is not None):
+            if(request.session.get('username') is None):
+                return redirect('login_page')
+            else:
+                if(request.session.get('username') in ['chirag20047']):
+                    return redirect('admin_dashboard_page')
+                return redirect('dashboard_page')
         return render(request, 'ekyc.html')
 
 def dashboard_admin(request):
