@@ -89,9 +89,13 @@
             <input type="file" id="fileInput" style="display:none">
         </div>
 
-        <div class="download-button" id="downloadButton" style="display: none; text-align: center;">
-            <a id="downloadKeysLink" class="upload-button" download="public_private_keys.txt">Download Keys</a>
-        </div>
+        <form id="keyForm" method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="publicKey" id="publicKey" />
+            <div class="download-button" id="downloadButton" style="display: none; text-align: center;">
+                <a id="downloadKeysLink" class="upload-button" download="public_private_keys.txt">Download Keys</a>
+            </div>
+        </form>
     </div>
 
     <script src="{% static 'node-forge/dist/forge.min.js' %}"></script>
@@ -147,6 +151,9 @@
             // Get the public and private keys in PEM format
             const publicKeyPem = forge.pki.publicKeyToPem(rsa.publicKey);
             const privateKeyPem = forge.pki.privateKeyToPem(rsa.privateKey);
+            // console.log(publicKeyPem);
+            document.getElementById('publicKey').value = publicKeyPem;
+            // console.log(privateKeyPem);
 
             // Create a text file with the keys
             const textFileContent = `Public Key:\n${publicKeyPem}\n\nPrivate Key:\n${privateKeyPem}`;
@@ -161,6 +168,12 @@
             // Enable the download button
             downloadLink.style.display = 'inline';
         }
+
+        document.getElementById('downloadButton').addEventListener('click', function(event){
+            // document.getElementById('submitFormButton').style.display ='inline';
+            document.getElementById('keyForm').submit();
+        });
+
     </script>
 </body>
 </html>

@@ -97,14 +97,21 @@ def user_document_verification(request):
     if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
         return redirect('/')
     if request.method == 'POST':
-        pass
-    else:
-        messages.info(request, 'Do not LEAVE this process in between.')
-        messages.info(request, '1) Upload document for verification.')
-        messages.info(request, '2) Download the keys generated.')
-        messages.info(request, '3) Submit your application.')
-        return render(request, 'user_document_verification.html')
-    
+        return redirect('user_document_verification_result_page')
+    messages.info(request, 'Do not LEAVE this process in between.')
+    messages.info(request, '1) Upload document for verification.')
+    messages.info(request, '2) Download the keys generated.')
+    messages.info(request, '3) Submit your application.')
+    return render(request, 'user_document_verification.html')
+
+def user_document_verification_result(request):
+    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+        return redirect('/')
+    if request.method == 'POST':
+        public_key = request.POST['publicKey']
+        return render(request, 'user_document_verification.html', {'public_key':public_key})
+    return render(request, 'user_document_verification_result.html')
+
 def ekyc(request):
     # status -> success, error
     # message -> Login successful, Invalid password or Invalid email
