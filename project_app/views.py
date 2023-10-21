@@ -84,7 +84,7 @@ def register_user(request):
                 user = AppUser.objects.create(username=input_username, password=input_password, 
                                         email=request.session.get('email_kyc'), first_name=input_first_name, second_name=input_last_name, contact=input_contact, balance = 10000000, public_key = None)
                 user.save()
-                return redirect('login_page')
+                return redirect('user_document_verification_page')
         # Passwords unmatched.
         else:
             messages.info(request, 'Passwords UNMATCHED')
@@ -92,6 +92,18 @@ def register_user(request):
             
     else:
         return render(request, 'signup.html')
+    
+def user_document_verification(request):
+    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+        return redirect('/')
+    if request.method == 'POST':
+        pass
+    else:
+        messages.info(request, 'Do not LEAVE this process in between.')
+        messages.info(request, '1) Upload document for verification.')
+        messages.info(request, '2) Download the keys generated.')
+        messages.info(request, '3) Submit your application.')
+        return render(request, 'user_document_verification.html')
     
 def ekyc(request):
     # status -> success, error

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Key and Upload PDF</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 2px solid #3498db;
+            background-color: #fff;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space between;
+            align-items: center;
+            background-color: #3498db;
+            padding: 10px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .navbar h2 {
+            color: #fff;
+            margin: 0;
+        }
+
+        .pdf-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .pdf-label {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .upload-button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .upload-button:hover {
+            background-color: #2980b9;
+        }
+
+        .messages {
+            background-color: #f1ffcc;
+            color: #0015ff;
+            padding: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %} 
+    <div class="container">
+        {% csrf_token %}
+        <div class="navbar">
+            <h2>Upload PDF & Generate Keys</h2>
+        </div>
+        
+        <div class="pdf-section">
+            <p id='first_label' class="pdf-label">Select a PDF file (up to 50 KB):</p>
+            <input type="file" id="pdfFile" accept=".pdf" style="display: none;"/>
+            <p>Selected PDF: <span id="selectedPdf"></span></p>
+            <button id="uploadPdfButton" class="upload-button">Upload PDF</button>
+            <input type="file" id="fileInput" style="display:none">
+        </div>
+
+        <div class="download-button" id="downloadButton" style="display: none; text-align: center;">
+            <a id="downloadKeysLink" class="upload-button" download="public_private_keys.txt">Download Keys</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadPdfButton').addEventListener('click', function() {
+            const fileInput = document.getElementById('fileInput');
+            fileInput.click();
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function() {
+            const selectedFileInput = document.getElementById('fileInput');
+            const selectedPdf = selectedFileInput.files[0];
+            if (selectedPdf) {
+                if (selectedPdf.size <= 51200 && selectedPdf.type === 'application/pdf') { 
+                    // 50KB limit and PDF type
+                    document.getElementById('selectedPdf').textContent = selectedPdf.name;
+                    document.getElementById('uploadPdfButton').style.display = 'none';
+                    document.getElementById('first_label').style.display = 'none';
+                    document.getElementById('downloadButton').style.display = 'block';
+                    generateRSAKeys();
+                }else {
+                    // console.log("HI");
+                    if(selectedPdf.type !== 'application/pdf'){
+                        // console.log("Case 1");
+                        alert('Only PDF files are allowed.');
+                    }
+                    else if(selectedPdf.size > 51200){
+                        // console.log("Case 2");
+                        alert('Please select a file within the size limit!');
+                    }
+                }
+            }
+        });
+
+        function handleFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const contents = e.target.result;
+                    // we'll process the file contents if required later.
+                }
+
+                reader.readAsText(file);
+            }
+        }
+        document.getElementById('fileInput').addEventListener('change', handleFile);
+
+        function generateRSAKeys() {
+            // Create an RSA key pair with a key size of 2048 bits
+            const rsa = forge.pki.rsa.generateKeyPair({ bits: 2048 });
+
+            // Get the public and private keys in PEM format
+            const publicKeyPem = forge.pki.publicKeyToPem(rsa.publicKey);
+            const privateKeyPem = forge.pki.privateKeyToPem(rsa.privateKey);
+
+            // Create a text file with the keys
+            const textFileContent = `Public Key:\n${publicKeyPem}\n\nPrivate Key:\n${privateKeyPem}`;
+            
+            // Create a Blob with the text content
+            const blob = new Blob([textFileContent], { type: 'text/plain' });
+
+            // Create a download link for the keys
+            const downloadLink = document.getElementById('downloadKeysLink');
+            downloadLink.href = window.URL.createObjectURL(blob);
+
+            // Enable the download button
+            downloadLink.style.display = 'inline';
+        }
+    </script>
+</body>
+</html>
