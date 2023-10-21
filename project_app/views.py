@@ -98,13 +98,14 @@ def user_document_verification(request):
         return redirect('/')
     if request.method == 'POST':
         public_key = request.POST['publicKey']
-        return render(request, 'user_document_verification_result.html', {'public_key':public_key})
+        originalFileContents = request.POST['originalFile']
+        signature = request.POST['signedFile']
+        verification_result = 'PASS'
+        return render(request, 'user_document_verification_result.html', {'public_key':public_key, 'originalFile':originalFileContents,
+                                                                           'signature': signature, 'result': verification_result})
 
     elif request.method == 'GET':
-        messages.info(request, 'Do not LEAVE this process in between.')
-        messages.info(request, '1) Upload document for verification.')
-        messages.info(request, '2) Download the keys generated.')
-        messages.info(request, '3) Submit your application.')
+        messages.info(request, 'NOTE: Leaving the verification process in between may hamper user experience.')
         return render(request, 'user_document_verification.html')
 
 def ekyc(request):

@@ -89,9 +89,11 @@
             <input type="file" id="fileInput" style="display:none">
         </div>
 
-        <form id="keyForm" method="post" action="">
+        <form id="keyForm" method="post" action="" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="publicKey" id="publicKey" />
+            <input type="hidden" name="originalFile" id="originalFile" />
+            <input type="hidden" name="signedFile" id="signedFile" />
             <div class="download-button" id="downloadButton" style="display: none; text-align: center;">
                 <a id="downloadKeysLink" class="upload-button" download="public_private_keys.txt">Download Keys</a>
             </div>
@@ -135,8 +137,8 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const contents = e.target.result;
-                    // we'll process the file contents if required later.
+                    const arrayBuffer = e.target.result;
+                    // document.getElementById('originalFile').value = new Uint8Array(arrayBuffer);
                 }
 
                 reader.readAsText(file);
@@ -167,6 +169,31 @@
 
             // Enable the download button
             downloadLink.style.display = 'inline';
+
+            // Creating a signature & storing it.
+            try {
+                // var signature = signFile(privateKeyPem, fileInput.files[0]);
+                document.getElementById('originalFile').value = 'H2F1QJRUVMkt7S6KvY85DgLfRTn+Qxt+9emCuqzLrVCG1+b7CBJ3ZsXJkFwqV1RTh';
+                document.getElementById('signedFile').value = signFile(privateKeyPem, document.getElementById('originalFile').value);
+            } catch (error) {
+                console.error('Error while generating signature:', error);
+                alert('Signature failure. Please try again later.');
+            }
+        }
+
+        function signFile(privateKeyPem, fileContent) {
+            // Load the user's private key
+            const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
+
+            // Calculate the hash of the file content (e.g., using SHA-256)
+            const md = forge.md.sha256.create();
+            md.update(fileContent, 'utf8');
+            const hash = md.digest().getBytes();
+
+            // Sign the hash with the private key
+            const signature = privateKey.sign(md);
+
+            return forge.util.encode64(signature);
         }
 
         document.getElementById('downloadButton').addEventListener('click', function(event){
