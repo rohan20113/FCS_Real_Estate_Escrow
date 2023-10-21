@@ -111,7 +111,7 @@
             const selectedFileInput = document.getElementById('fileInput');
             const selectedPdf = selectedFileInput.files[0];
             if (selectedPdf) {
-                if (selectedPdf.size <= 51200 && selectedPdf.type === 'application/pdf') { 
+                if (selectedPdf.size > 0 && selectedPdf.size <= 51200 && selectedPdf.type === 'application/pdf') { 
                     // 50KB limit and PDF type
                     document.getElementById('selectedPdf').textContent = selectedPdf.name;
                     document.getElementById('uploadPdfButton').style.display = 'none';
@@ -138,10 +138,19 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const arrayBuffer = e.target.result;
-                    // document.getElementById('originalFile').value = new Uint8Array(arrayBuffer);
+                    const uint8Array = new Uint8Array(arrayBuffer);
+                    // Convert the binary data directly to a base64 string
+                    let binaryString = '';
+                    uint8Array.forEach(function(byte) {
+                        binaryString += String.fromCharCode(byte);
+                    });
+
+                    const base64String = btoa(binaryString);
+                    document.getElementById('originalFile').value = base64String;
+                    // console.log(base64String);
                 }
 
-                reader.readAsText(file);
+                reader.readAsArrayBuffer(file);
             }
         }
         document.getElementById('fileInput').addEventListener('change', handleFile);
@@ -155,7 +164,7 @@
             const privateKeyPem = forge.pki.privateKeyToPem(rsa.privateKey);
             // console.log(publicKeyPem);
             document.getElementById('publicKey').value = publicKeyPem;
-            // console.log(privateKeyPem);
+            // console.log(document.getElementById('publicKey').value);
 
             // Create a text file with the keys
             const textFileContent = `Public Key:\n${publicKeyPem}\n\nPrivate Key:\n${privateKeyPem}`;
@@ -172,22 +181,24 @@
 
             // Creating a signature & storing it.
             try {
-                // var signature = signFile(privateKeyPem, fileInput.files[0]);
-                document.getElementById('originalFile').value = 'H2F1QJRUVMkt7S6KvY85DgLfRTn+Qxt+9emCuqzLrVCG1+b7CBJ3ZsXJkFwqV1RTh';
-                document.getElementById('signedFile').value = signFile(privateKeyPem, document.getElementById('originalFile').value);
+                const signature = signFile(privateKeyPem, document.getElementById('originalFile').value);
+                document.getElementById('signedFile').value = signFile(privateKeyPem, signature);
             } catch (error) {
                 console.error('Error while generating signature:', error);
                 alert('Signature failure. Please try again later.');
             }
         }
 
-        function signFile(privateKeyPem, fileContent) {
+        function signFile(privateKeyPem, base64FileContent) {
             // Load the user's private key
             const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
 
-            // Calculate the hash of the file content (e.g., using SHA-256)
+            // Decode the base64 file content to binary data
+            const binaryFileContent = atob(base64FileContent);
+
+            // Calculate the hash of the binary file content (e.g., using SHA-256)
             const md = forge.md.sha256.create();
-            md.update(fileContent, 'utf8');
+            md.update(binaryFileContent, 'raw');
             const hash = md.digest().getBytes();
 
             // Sign the hash with the private key
@@ -197,7 +208,6 @@
         }
 
         document.getElementById('downloadButton').addEventListener('click', function(event){
-            // document.getElementById('submitFormButton').style.display ='inline';
             document.getElementById('keyForm').submit();
         });
 

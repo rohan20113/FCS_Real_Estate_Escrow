@@ -1,20 +1,16 @@
 from django.shortcuts import render, redirect, reverse
-# from django.http import HttpResponse
 from .models import AppUser, Property, PropertyApplications
 from django.contrib import messages
-# from django.contrib.auth.models import User, auth
-# from django.views.decorators.csrf import csrf_exempt
 import hashlib, json
 import requests
-# from django import forms
-# from django.core import serializers
 from django.shortcuts import get_object_or_404
 from datetime import date 
 from django.http import JsonResponse
-# from django.http import JsonResponse
-# from django.views.decorators.cache import never_cache
-# from django.contrib.auth.decorators import login_required
-# from django.shortcuts import render, redirect
+import base64
+from Crypto.PublicKey import RSA
+from Crypto.Signature import pkcs1_15
+from Crypto.Hash import SHA256
+import re
 
 # Create your views here.
 # @csrf_exempt
@@ -93,15 +89,63 @@ def register_user(request):
     else:
         return render(request, 'signup.html')
     
+def is_valid_pem_format(pem_string):
+    pem_string = pem_string.strip()  # Remove leading/trailing whitespace
+
+    # Check if the string starts with "-----BEGIN" and ends with "-----END"
+    if not pem_string.startswith("-----BEGIN ") or not pem_string.endswith("-----END "):
+        print("1")
+        return False
+
+    # Split the string into lines
+    pem_lines = pem_string.splitlines()
+
+    # Check if there are at least three lines (BEGIN, content, END)
+    if len(pem_lines) < 3:
+        print("2")
+        return False
+
+    # Check that the lines have the expected BEGIN and END labels
+    if not pem_lines[0].startswith("-----BEGIN ") or not pem_lines[-1].startswith("-----END "):
+        print("3")
+        return False
+
+    # Extract the label between "-----BEGIN " and "-----"
+    begin_label = pem_lines[0].split("-----BEGIN ")[1].split("-----")[0]
+    end_label = pem_lines[-1].split("-----END ")[1].split("-----")[0]
+
+    # Check if the BEGIN and END labels match
+    if begin_label != end_label:
+        print("4")
+        return False
+
+    return True
+    
 def user_document_verification(request):
     if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
         return redirect('/')
     if request.method == 'POST':
-        public_key = request.POST['publicKey']
+        public_key_pem = request.POST['publicKey']
+        print(is_valid_pem_format(public_key_pem))
         originalFileContents = request.POST['originalFile']
         signature = request.POST['signedFile']
-        verification_result = 'PASS'
-        return render(request, 'user_document_verification_result.html', {'public_key':public_key, 'originalFile':originalFileContents,
+        verification_result = 'FAIL'
+        try:
+            original_file_contents = base64.b64decode(originalFileContents)
+            signature = base64.b64decode(signature)
+            public_key = RSA.import_key(public_key_pem)
+            # Create a hash of the original file contents
+            h = SHA256.new(original_file_contents)
+            # Verify the signature
+            verifier = pkcs1_15.new(public_key)
+            if verifier.verify(h, signature):
+                verification_result = 'PASS'
+        except Exception as e:
+            # Handle any exceptions that may occur during verification
+            print("Error during verification:", str(e))
+            # Print specific details about the data and error
+
+        return render(request, 'user_document_verification_result.html', {'public_key_pem':public_key_pem, 'public_key':public_key, 'originalFile':originalFileContents,
                                                                            'signature': signature, 'result': verification_result})
 
     elif request.method == 'GET':
