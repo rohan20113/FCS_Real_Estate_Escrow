@@ -121,8 +121,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 # Collected files will be stored at the following location.
-STATIC_ROOT = os.path.join(BASE_DIR, '/static')
-print(BASE_DIR)
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# print(BASE_DIR)
 # print(STATIC_ROOT)
 # print(STATIC_URL)
 # STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
