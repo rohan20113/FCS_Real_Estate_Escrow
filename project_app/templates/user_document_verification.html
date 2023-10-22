@@ -89,13 +89,13 @@
             <input type="file" id="fileInput" style="display:none">
         </div>
 
-        <form id="keyForm" method="post" action="" enctype="multipart/form-data">
+        <form id="keyForm" method="post" action="">
             {% csrf_token %}
             <input type="hidden" name="publicKey" id="publicKey" />
             <input type="hidden" name="originalFile" id="originalFile" />
             <input type="hidden" name="signedFile" id="signedFile" />
             <div class="download-button" id="downloadButton" style="display: none; text-align: center;">
-                <a id="downloadKeysLink" class="upload-button" download="public_private_keys.txt">Download Keys</a>
+                <a id="downloadKeysLink" class="upload-button" download="keys_G13.txt">Download Keys</a>
             </div>
         </form>
     </div>
@@ -200,13 +200,14 @@
             // Calculate the hash of the binary file content (e.g., using SHA-256)
             var md = forge.md.sha256.create();
             md.update(binaryFileContent, 'raw');
-            var hash = md.digest().getBytes();
-            // document.getElementById('hashed').value = forge.util.bytesToHex(hash);
+            // var hash = md.digest().getBytes();
+            // hash = forge.util.bytesToHex(hash);
             // console.log(hash);
 
             // Sign the hash with the private key
             const signature = privateKey.sign(md);
-            // console.log(signature);
+            // console.log(typeof forge.util.encode64(signature));
+            // console.log(typeof btoa(signature));
             return forge.util.encode64(signature);
         }
 

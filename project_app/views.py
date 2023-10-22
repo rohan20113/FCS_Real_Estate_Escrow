@@ -88,7 +88,7 @@ def register_user(request):
             
     else:
         return render(request, 'signup.html')
-    
+
 def user_document_verification(request):
     if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
         return redirect('/')
@@ -98,18 +98,17 @@ def user_document_verification(request):
         signature = request.POST['signedFile']
         # hash = request.POST['hashed']
         verification_result = 'FAIL'
-        # print(originalFileContents) --> Verified, same content.
-        # print(signature)  --> Verified, same content.
+        # print(originalFileContents) #--> Verified, same content.
+        # print(signature)  #--> Verified, same content.
         try:
             public_key_pem = base64.b64decode(public_key_pem)
-            original_file_contents = base64.b64decode(originalFileContents)
+            originalFileContents = base64.b64decode(originalFileContents)
             signature = base64.b64decode(signature)
+            # print(signature)
             public_key = RSA.import_key(public_key_pem)
             # Create a hash of the original file contents
-            h = SHA256.new(original_file_contents)
-            # print(h.digest())
-            # print(bytes.fromhex(hash))
-            # Verify the signature
+            h = SHA256.new(originalFileContents)
+            # print(h.hexdigest())
             verifier = pkcs1_15.new(public_key)
             if verifier.verify(h, signature):
                 verification_result = 'PASS'
