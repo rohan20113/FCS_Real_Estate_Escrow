@@ -96,6 +96,7 @@ def user_document_verification(request):
         public_key_pem = request.POST['publicKey']
         originalFileContents = request.POST['originalFile']
         signature = request.POST['signedFile']
+        # hash = request.POST['hashed']
         verification_result = 'FAIL'
         # print(originalFileContents) --> Verified, same content.
         # print(signature)  --> Verified, same content.
@@ -106,7 +107,8 @@ def user_document_verification(request):
             public_key = RSA.import_key(public_key_pem)
             # Create a hash of the original file contents
             h = SHA256.new(original_file_contents)
-            # print(h)
+            # print(h.digest())
+            # print(bytes.fromhex(hash))
             # Verify the signature
             verifier = pkcs1_15.new(public_key)
             if verifier.verify(h, signature):
@@ -135,8 +137,6 @@ def ekyc(request):
             "password":password_input
         }
         # print(email_input, password_input)
-        json_dict = json.dumps(dictionary)
-        flag = False
         # Will call the API here and set the flag accordingly.
         try:
             api_response = requests.post('https://192.168.3.39:5000/kyc', json = dictionary, verify= False)

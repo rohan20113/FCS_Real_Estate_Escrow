@@ -144,7 +144,7 @@
                     uint8Array.forEach(function(byte) {
                         binaryString += String.fromCharCode(byte);
                     });
-
+                    // console.log(binaryString);
                     const base64String = btoa(binaryString);
                     document.getElementById('originalFile').value = base64String;
                     // console.log(base64String);
@@ -197,16 +197,16 @@
 
             // Decode the base64 file content to binary data
             const binaryFileContent = atob(base64FileContent);
-
             // Calculate the hash of the binary file content (e.g., using SHA-256)
-            const md = forge.md.sha256.create();
+            var md = forge.md.sha256.create();
             md.update(binaryFileContent, 'raw');
-            const hash = md.digest().getBytes();
+            var hash = md.digest().getBytes();
+            // document.getElementById('hashed').value = forge.util.bytesToHex(hash);
             // console.log(hash);
 
             // Sign the hash with the private key
             const signature = privateKey.sign(md);
-
+            // console.log(signature);
             return forge.util.encode64(signature);
         }
 
