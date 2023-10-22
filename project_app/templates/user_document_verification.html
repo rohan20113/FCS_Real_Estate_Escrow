@@ -163,7 +163,8 @@
             const publicKeyPem = forge.pki.publicKeyToPem(rsa.publicKey);
             const privateKeyPem = forge.pki.privateKeyToPem(rsa.privateKey);
             // console.log(publicKeyPem);
-            document.getElementById('publicKey').value = publicKeyPem;
+            document.getElementById('publicKey').value = btoa(publicKeyPem);
+            // console.log(document.getElementById('publicKey').value);
             // console.log(document.getElementById('publicKey').value);
 
             // Create a text file with the keys
@@ -182,7 +183,8 @@
             // Creating a signature & storing it.
             try {
                 const signature = signFile(privateKeyPem, document.getElementById('originalFile').value);
-                document.getElementById('signedFile').value = signFile(privateKeyPem, signature);
+                document.getElementById('signedFile').value = signature;
+                // console.log(signature);
             } catch (error) {
                 console.error('Error while generating signature:', error);
                 alert('Signature failure. Please try again later.');
@@ -200,6 +202,7 @@
             const md = forge.md.sha256.create();
             md.update(binaryFileContent, 'raw');
             const hash = md.digest().getBytes();
+            // console.log(hash);
 
             // Sign the hash with the private key
             const signature = privateKey.sign(md);

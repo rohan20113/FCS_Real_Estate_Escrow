@@ -89,53 +89,24 @@ def register_user(request):
     else:
         return render(request, 'signup.html')
     
-def is_valid_pem_format(pem_string):
-    pem_string = pem_string.strip()  # Remove leading/trailing whitespace
-
-    # Check if the string starts with "-----BEGIN" and ends with "-----END"
-    if not pem_string.startswith("-----BEGIN ") or not pem_string.endswith("-----END "):
-        print("1")
-        return False
-
-    # Split the string into lines
-    pem_lines = pem_string.splitlines()
-
-    # Check if there are at least three lines (BEGIN, content, END)
-    if len(pem_lines) < 3:
-        print("2")
-        return False
-
-    # Check that the lines have the expected BEGIN and END labels
-    if not pem_lines[0].startswith("-----BEGIN ") or not pem_lines[-1].startswith("-----END "):
-        print("3")
-        return False
-
-    # Extract the label between "-----BEGIN " and "-----"
-    begin_label = pem_lines[0].split("-----BEGIN ")[1].split("-----")[0]
-    end_label = pem_lines[-1].split("-----END ")[1].split("-----")[0]
-
-    # Check if the BEGIN and END labels match
-    if begin_label != end_label:
-        print("4")
-        return False
-
-    return True
-    
 def user_document_verification(request):
     if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
         return redirect('/')
     if request.method == 'POST':
         public_key_pem = request.POST['publicKey']
-        print(is_valid_pem_format(public_key_pem))
         originalFileContents = request.POST['originalFile']
         signature = request.POST['signedFile']
         verification_result = 'FAIL'
+        # print(originalFileContents) --> Verified, same content.
+        # print(signature)  --> Verified, same content.
         try:
+            public_key_pem = base64.b64decode(public_key_pem)
             original_file_contents = base64.b64decode(originalFileContents)
             signature = base64.b64decode(signature)
             public_key = RSA.import_key(public_key_pem)
             # Create a hash of the original file contents
             h = SHA256.new(original_file_contents)
+            # print(h)
             # Verify the signature
             verifier = pkcs1_15.new(public_key)
             if verifier.verify(h, signature):
