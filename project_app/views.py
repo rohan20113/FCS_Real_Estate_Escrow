@@ -101,6 +101,11 @@ def register_user(request):
 def user_document_verification(request, id):
     if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
         return redirect('/')
+    
+    # Check if already document verified: 
+    usr = AppUser.objects.get(id=id)
+    if(usr.dv):
+        return redirect('dashboard_page')
     if request.method == 'POST':
         data = json.loads(request.body)
         public_key_pem = data.get('publicKey', None)
@@ -110,7 +115,7 @@ def user_document_verification(request, id):
         # originalFileContents = request.POST['originalFile']
         # signature = request.POST['signedFile']
         # hash = request.POST['hashed']
-        print(id)
+        # print(id)
         # verification_result = 'FAIL'
         # print(originalFileContents) #--> Verified, same content.
         # print(signature)  #--> Verified, same content.

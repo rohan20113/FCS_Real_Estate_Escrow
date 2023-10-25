@@ -234,17 +234,18 @@
                 })
                 .then(response => response.json())
                 .then(data =>{
-                    if (response.ok) {
+                    // if (response.ok) {
                         // alert(data.message);
                         // Redirect to the response url
                         var response_url = data.url;
                         window.location.href = response_url;
-                    } else {
+                    // } else {
                         // Handle errors, if any
-                    }
+                    // }
                 })
                 .catch(error => {
                     // Handle network or other errors
+                    console.log("Network Response Error.")
                 });
             }
 
