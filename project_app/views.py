@@ -5,12 +5,10 @@ import hashlib, json
 import requests
 from django.shortcuts import get_object_or_404
 from datetime import date 
-from django.http import JsonResponse
 import base64
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
-import re
 
 # Create your views here.
 # @csrf_exempt
@@ -96,27 +94,33 @@ def user_document_verification(request):
         public_key_pem = request.POST['publicKey']
         originalFileContents = request.POST['originalFile']
         signature = request.POST['signedFile']
-        hash = request.POST['hashed']
+        # hash = request.POST['hashed']
         verification_result = 'FAIL'
         # print(originalFileContents) #--> Verified, same content.
         # print(signature)  #--> Verified, same content.
         try:
-            print('ENCODED HASH:',hash)
-            hash = base64.b64decode(hash)
-            print('\nDECODED HASH:',hash)
+            # print('ENCODED HASH:',hash)
+            # hash = base64.b64decode(hash)
+            # print('\nDECODED HASH:',hash)
             public_key_pem = base64.b64decode(public_key_pem)
             # print(originalFileContents)
             originalFileContents = base64.b64decode(originalFileContents)
             # print("\nDecoded",originalFileContents)
             # print(signature)    
             signature = base64.b64decode(signature)
+            # print(signature)    
             public_key = RSA.import_key(public_key_pem)
             # Create a hash of the original file contents
             h = SHA256.new(originalFileContents)
-            print("\nHash calculated", h.hexdigest())
+            # calculated_hash = h.hexdigest()
+            # print('Calculated\n', calculated_hash, '\nReceived\n', hash)
+            # print(type(calculated_hash), type(hash))
+            # print(calculated_hash == str((hash).decode('utf-8')))
             verifier = pkcs1_15.new(public_key)
-            if verifier.verify(h, signature):
+            if verifier.verify(h, signature) is None:
                 verification_result = 'PASS'
+                # print('PASS')
+            
         except Exception as e:
             # Handle any exceptions that may occur during verification
             print("Error during verification:", str(e))

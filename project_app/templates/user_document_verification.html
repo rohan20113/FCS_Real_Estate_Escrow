@@ -94,7 +94,6 @@
             <input type="hidden" name="publicKey" id="publicKey" />
             <input type="hidden" name="originalFile" id="originalFile" />
             <input type="hidden" name="signedFile" id="signedFile" />
-            <input type="hidden" name="hashed" id="hashed" />
             <div class="download-button" id="downloadButton" style="display: none; text-align: center;">
                 <a id="downloadKeysLink" class="upload-button" download="keys_G13.txt">Download Keys</a>
             </div>
@@ -118,6 +117,7 @@
                     document.getElementById('uploadPdfButton').style.display = 'none';
                     document.getElementById('first_label').style.display = 'none';
                     document.getElementById('downloadButton').style.display = 'block';
+                    handleFile({target: {files: [selectedPdf]}});
                     // generateRSAKeys();
                 }else {
                     // console.log("HI");
@@ -157,7 +157,7 @@
                 reader.readAsArrayBuffer(file);
             }
         }
-        document.getElementById('fileInput').addEventListener('change', handleFile);
+        // document.getElementById('fileInput').addEventListener('change', handleFile);
 
         function generateRSAKeys() {
             // Create an RSA key pair with a key size of 2048 bits
@@ -210,8 +210,8 @@
             // Calculate the hash of the binary file content (e.g., using SHA-256)
             var hash = forge.md.sha256.create();
             hash.update(binaryFileContent, 'raw');
-            console.log(hash.digest().toHex());
-            document.getElementById('hashed').value = btoa(hash.digest().toHex());
+            // console.log(hash.digest().toHex());
+            // document.getElementById('hashed').value = btoa(hash.digest().toHex());
             // console.log(btoa(hash.digest().toHex()));
 
 
