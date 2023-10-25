@@ -234,7 +234,7 @@
                 })
                 .then(response => response.json())
                 .then(data =>{
-                    if (data.success) {
+                    if (response.ok) {
                         // alert(data.message);
                         // Redirect to the response url
                         var response_url = data.url;

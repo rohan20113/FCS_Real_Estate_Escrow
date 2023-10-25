@@ -134,7 +134,7 @@ def user_document_verification(request, id):
             # print(calculated_hash == str((hash).decode('utf-8')))
             verifier = pkcs1_15.new(public_key)
             if verifier.verify(h, signature) is None:
-                verification_result = 'PASS'
+                # verification_result = 'PASS'
                 # Update the user's dv boolean_field & store the public_key_pem.
                 current_user = AppUser.objects.get(id = id)
                 current_user.dv = True
@@ -146,6 +146,11 @@ def user_document_verification(request, id):
                 'url': '/login'
             }
             return JsonResponse(response_data)
+            # messages.info(request, 'Document Verification Failed!\n Please Try Again.')
+            # response_data = {
+            #     'success': False,
+            #     'url': f'/user_document_verification/{id}'
+            # }
             # return redirect('login_page')
             # return render(request, 'user_document_verification_result.html', {'public_key_pem':public_key_pem, 'public_key':public_key, 'originalFile':originalFileContents,
             #                                                                 'signature': signature, 'result': verification_result})
@@ -154,8 +159,13 @@ def user_document_verification(request, id):
             # Handle any exceptions that may occur during verification
             # print("Error during verification:", str(e))
             # Print specific details about the data and error
-            messages.info('Document Verification Failed!\n Please Try Again.')
-            return render(request, 'user_document_verification.html', {'id': id})
+            messages.info(request, 'Document Verification Failed!\n Please Try Again.')
+            response_data = {
+                'success': False,
+                'url': f'/user_document_verification/{id}'
+            }
+            return JsonResponse(response_data)
+            # return render(request, 'user_document_verification.html', {'id': id})
 
     elif request.method == 'GET':
         messages.info(request, 'NOTE: Leaving the verification process in between may hamper user experience.')
