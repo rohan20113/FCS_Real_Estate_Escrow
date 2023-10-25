@@ -82,7 +82,7 @@
         </div>
         
         <div class="pdf-section">
-            <p id='first_label' class="pdf-label">Select a PDF file (up to 50 KB):</p>
+            <p id='first_label' class="pdf-label">Select a PDF file (up to 150 KB):</p>
             <input type="file" id="pdfFile" accept=".pdf" style="display: none;"/>
             <p>Selected PDF: <span id="selectedPdf"></span></p>
             <button id="uploadPdfButton" class="upload-button">Upload PDF</button>
@@ -111,8 +111,8 @@
             const selectedFileInput = document.getElementById('fileInput');
             const selectedPdf = selectedFileInput.files[0];
             if (selectedPdf) {
-                if (selectedPdf.size > 0 && selectedPdf.size <= 51200 && selectedPdf.type === 'application/pdf') { 
-                    // 50KB limit and PDF type
+                if (selectedPdf.size > 0 && selectedPdf.size <= 153600 && selectedPdf.type === 'application/pdf') { 
+                    // 150KB limit and PDF type
                     document.getElementById('selectedPdf').textContent = selectedPdf.name;
                     document.getElementById('uploadPdfButton').style.display = 'none';
                     document.getElementById('first_label').style.display = 'none';
@@ -125,7 +125,7 @@
                         // console.log("Case 1");
                         alert('Only PDF files are allowed.');
                     }
-                    else if(selectedPdf.size > 51200){
+                    else if(selectedPdf.size > 153600){
                         // console.log("Case 2");
                         alert('Please select a file within the size limit!');
                     }

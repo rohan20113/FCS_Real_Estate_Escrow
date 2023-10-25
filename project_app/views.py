@@ -25,6 +25,8 @@ def login_user(request):
         application_users = AppUser.objects.all()
         user_flag = False
         pass_flag = False
+        user_id = None
+        dv_flag = False
         for users in application_users:
             # print(users.username, users.password)
             if (username == users.username):
@@ -33,11 +35,16 @@ def login_user(request):
                 if(password == users.password):
                     # print("STATUS:", verified)
                     pass_flag = True
+                    user_id = users.id
+                    dv_flag = users.dv
         if user_flag and pass_flag:
             request.session['username'] = username
             if username in ['chirag20047']:
                 return redirect('admin_dashboard_page')
             else:
+                if(dv_flag is False):
+                    messages.info(request, "Document Verification Pending")
+                    return redirect('user_document_verification_page', id=user_id)
                 return redirect('dashboard_page')
         else:
             if user_flag == False:
@@ -78,7 +85,10 @@ def register_user(request):
                 user = AppUser.objects.create(username=input_username, password=input_password, 
                                         email=request.session.get('email_kyc'), first_name=input_first_name, second_name=input_last_name, contact=input_contact, balance = 10000000, public_key = None)
                 user.save()
-                return redirect('user_document_verification_page')
+                # Obtaining the user's id.
+                user_id = user.id
+                # print("ID:", user_id)
+                return redirect('user_document_verification_page', id = user_id)
         # Passwords unmatched.
         else:
             messages.info(request, 'Passwords UNMATCHED')
@@ -87,7 +97,7 @@ def register_user(request):
     else:
         return render(request, 'signup.html')
 
-def user_document_verification(request):
+def user_document_verification(request, id):
     if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
         return redirect('/')
     if request.method == 'POST':
@@ -95,6 +105,7 @@ def user_document_verification(request):
         originalFileContents = request.POST['originalFile']
         signature = request.POST['signedFile']
         # hash = request.POST['hashed']
+        print(id)
         verification_result = 'FAIL'
         # print(originalFileContents) #--> Verified, same content.
         # print(signature)  #--> Verified, same content.
@@ -119,19 +130,26 @@ def user_document_verification(request):
             verifier = pkcs1_15.new(public_key)
             if verifier.verify(h, signature) is None:
                 verification_result = 'PASS'
-                # print('PASS')
-            
+                # Update the user's dv boolean_field & store the public_key_pem.
+                current_user = AppUser.objects.get(id = id)
+                current_user.dv = True
+                current_user.public_key = public_key_pem.decode('utf-8')
+                current_user.save()
+            messages.info(request, 'Document Verification Successful')
+            return redirect('login_page')
+            # return render(request, 'user_document_verification_result.html', {'public_key_pem':public_key_pem, 'public_key':public_key, 'originalFile':originalFileContents,
+            #                                                                 'signature': signature, 'result': verification_result})
+    
         except Exception as e:
             # Handle any exceptions that may occur during verification
-            print("Error during verification:", str(e))
+            # print("Error during verification:", str(e))
             # Print specific details about the data and error
-
-        return render(request, 'user_document_verification_result.html', {'public_key_pem':public_key_pem, 'public_key':public_key, 'originalFile':originalFileContents,
-                                                                           'signature': signature, 'result': verification_result})
+            messages.info('Document Verification Failed!\n Please Try Again.')
+            return render(request, 'user_document_verification.html', {'id': id})
 
     elif request.method == 'GET':
         messages.info(request, 'NOTE: Leaving the verification process in between may hamper user experience.')
-        return render(request, 'user_document_verification.html')
+        return render(request, 'user_document_verification.html', {'id': id})
 
 def ekyc(request):
     # status -> success, error

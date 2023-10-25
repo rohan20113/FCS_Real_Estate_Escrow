@@ -135,5 +135,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Setting it to 30 minutes.
-SESSION_COOKIE_AGE = 3600
+# Setting it to 3 hours
+SESSION_COOKIE_AGE = 10800
