@@ -96,19 +96,24 @@ def user_document_verification(request):
         public_key_pem = request.POST['publicKey']
         originalFileContents = request.POST['originalFile']
         signature = request.POST['signedFile']
-        # hash = request.POST['hashed']
+        hash = request.POST['hashed']
         verification_result = 'FAIL'
         # print(originalFileContents) #--> Verified, same content.
         # print(signature)  #--> Verified, same content.
         try:
+            print('ENCODED HASH:',hash)
+            hash = base64.b64decode(hash)
+            print('\nDECODED HASH:',hash)
             public_key_pem = base64.b64decode(public_key_pem)
+            # print(originalFileContents)
             originalFileContents = base64.b64decode(originalFileContents)
+            # print("\nDecoded",originalFileContents)
+            # print(signature)    
             signature = base64.b64decode(signature)
-            # print(signature)
             public_key = RSA.import_key(public_key_pem)
             # Create a hash of the original file contents
             h = SHA256.new(originalFileContents)
-            # print(h.hexdigest())
+            print("\nHash calculated", h.hexdigest())
             verifier = pkcs1_15.new(public_key)
             if verifier.verify(h, signature):
                 verification_result = 'PASS'

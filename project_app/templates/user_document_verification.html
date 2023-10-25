@@ -94,6 +94,7 @@
             <input type="hidden" name="publicKey" id="publicKey" />
             <input type="hidden" name="originalFile" id="originalFile" />
             <input type="hidden" name="signedFile" id="signedFile" />
+            <input type="hidden" name="hashed" id="hashed" />
             <div class="download-button" id="downloadButton" style="display: none; text-align: center;">
                 <a id="downloadKeysLink" class="upload-button" download="keys_G13.txt">Download Keys</a>
             </div>
@@ -117,7 +118,7 @@
                     document.getElementById('uploadPdfButton').style.display = 'none';
                     document.getElementById('first_label').style.display = 'none';
                     document.getElementById('downloadButton').style.display = 'block';
-                    generateRSAKeys();
+                    // generateRSAKeys();
                 }else {
                     // console.log("HI");
                     if(selectedPdf.type !== 'application/pdf'){
@@ -146,7 +147,10 @@
                     });
                     // console.log(binaryString);
                     const base64String = btoa(binaryString);
+                    // console.log(document.getElementById('originalFile').value.length);
                     document.getElementById('originalFile').value = base64String;
+                    generateRSAKeys();
+                    // console.log(document.getElementById('originalFile').value.length);
                     // console.log(base64String);
                 }
 
@@ -182,9 +186,9 @@
 
             // Creating a signature & storing it.
             try {
-                const signature = signFile(privateKeyPem, document.getElementById('originalFile').value);
-                document.getElementById('signedFile').value = signature;
-                // console.log(signature);
+                const sign = signFile(privateKeyPem, document.getElementById('originalFile').value);
+                document.getElementById('signedFile').value = sign;
+                // console.log(sign);
             } catch (error) {
                 console.error('Error while generating signature:', error);
                 alert('Signature failure. Please try again later.');
@@ -197,16 +201,24 @@
 
             // Decode the base64 file content to binary data
             const binaryFileContent = atob(base64FileContent);
+            // console.log(base64FileContent)
+            // console.log(base64FileContent.length)
+            // console.log(typeof base64FileContent)
+            // console.log(binaryFileContent)
+            // console.log(binaryFileContent.length)
+            // console.log(typeof binaryFileContent)
             // Calculate the hash of the binary file content (e.g., using SHA-256)
-            var md = forge.md.sha256.create();
-            md.update(binaryFileContent, 'raw');
-            // var hash = md.digest().getBytes();
-            // hash = forge.util.bytesToHex(hash);
-            // console.log(hash);
+            var hash = forge.md.sha256.create();
+            hash.update(binaryFileContent, 'raw');
+            console.log(hash.digest().toHex());
+            document.getElementById('hashed').value = btoa(hash.digest().toHex());
+            // console.log(btoa(hash.digest().toHex()));
+
 
             // Sign the hash with the private key
-            const signature = privateKey.sign(md);
-            // console.log(typeof forge.util.encode64(signature));
+            const signature = privateKey.sign(hash);
+            // console.log(signature);
+            // console.log(forge.util.encode64(signature));
             // console.log(typeof btoa(signature));
             return forge.util.encode64(signature);
         }
