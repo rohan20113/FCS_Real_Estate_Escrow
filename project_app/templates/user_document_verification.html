@@ -89,19 +89,14 @@
             <input type="file" id="fileInput" style="display:none">
         </div>
 
-        <form id="keyForm" method="post" action="">
-            {% csrf_token %}
-            <input type="hidden" name="publicKey" id="publicKey" />
-            <input type="hidden" name="originalFile" id="originalFile" />
-            <input type="hidden" name="signedFile" id="signedFile" />
-            <div class="download-button" id="downloadButton" style="display: none; text-align: center;">
-                <a id="downloadKeysLink" class="upload-button" download="keys_G13.txt">Download Keys</a>
-            </div>
-        </form>
+        <div class="download-button" id="downloadButton" style="display: none; text-align: center;">
+            <a id="downloadKeysLink" class="upload-button" download="keys_G13.txt">Download Keys</a>
+        </div>
     </div>
 
     <script src="{% static 'node-forge/dist/forge.min.js' %}"></script>
     <script >
+        var signedFile_ip, originalFile_ip, publicKey_ip;
         document.getElementById('uploadPdfButton').addEventListener('click', function() {
             const fileInput = document.getElementById('fileInput');
             fileInput.click();
@@ -148,7 +143,8 @@
                     // console.log(binaryString);
                     const base64String = btoa(binaryString);
                     // console.log(document.getElementById('originalFile').value.length);
-                    document.getElementById('originalFile').value = base64String;
+                    // document.getElementById('originalFile').value = base64String;
+                    originalFile_ip = base64String;
                     generateRSAKeys();
                     // console.log(document.getElementById('originalFile').value.length);
                     // console.log(base64String);
@@ -167,7 +163,8 @@
             const publicKeyPem = forge.pki.publicKeyToPem(rsa.publicKey);
             const privateKeyPem = forge.pki.privateKeyToPem(rsa.privateKey);
             // console.log(publicKeyPem);
-            document.getElementById('publicKey').value = btoa(publicKeyPem);
+            // document.getElementById('publicKey').value = btoa(publicKeyPem);
+            publicKey_ip = btoa(publicKeyPem);
             // console.log(document.getElementById('publicKey').value);
             // console.log(document.getElementById('publicKey').value);
 
@@ -186,8 +183,10 @@
 
             // Creating a signature & storing it.
             try {
-                const sign = signFile(privateKeyPem, document.getElementById('originalFile').value);
-                document.getElementById('signedFile').value = sign;
+                // const sign = signFile(privateKeyPem, document.getElementById('originalFile').value);
+                // document.getElementById('signedFile').value = sign;
+                const sign = signFile(privateKeyPem, originalFile_ip);
+                signedFile_ip = sign;
                 // console.log(sign);
             } catch (error) {
                 console.error('Error while generating signature:', error);
@@ -224,8 +223,58 @@
         }
 
         document.getElementById('downloadButton').addEventListener('click', function(event){
-            document.getElementById('keyForm').submit();
+            function sendPostRequest(url, data) {
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken') // Include the CSRF token if needed
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(data =>{
+                    if (data.success) {
+                        // alert(data.message);
+                        // Redirect to the response url
+                        var response_url = data.url;
+                        window.location.href = response_url;
+                    } else {
+                        // Handle errors, if any
+                    }
+                })
+                .catch(error => {
+                    // Handle network or other errors
+                });
+            }
+
+            // Example usage
+            const url = '/user_document_verification/{{id}}';
+            const data = {
+                'originalFile': originalFile_ip,
+                'signedFile': signedFile_ip,
+                'publicKey': publicKey_ip
+            };
+
+            sendPostRequest(url, data);
+            // document.getElementById('keyForm').submit();
         });
+
+        // Function to get the CSRF token from the cookies
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
 
     </script>
 </body>

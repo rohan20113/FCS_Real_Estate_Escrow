@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, reverse
 from .models import AppUser, Property, PropertyApplications
 from django.contrib import messages
+from django.http import JsonResponse
 import hashlib, json
 import requests
 from django.shortcuts import get_object_or_404
@@ -101,12 +102,16 @@ def user_document_verification(request, id):
     if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
         return redirect('/')
     if request.method == 'POST':
-        public_key_pem = request.POST['publicKey']
-        originalFileContents = request.POST['originalFile']
-        signature = request.POST['signedFile']
+        data = json.loads(request.body)
+        public_key_pem = data.get('publicKey', None)
+        originalFileContents = data.get('originalFile', None)
+        signature = data.get('signedFile', None)
+        # public_key_pem = request.POST['publicKey']
+        # originalFileContents = request.POST['originalFile']
+        # signature = request.POST['signedFile']
         # hash = request.POST['hashed']
         print(id)
-        verification_result = 'FAIL'
+        # verification_result = 'FAIL'
         # print(originalFileContents) #--> Verified, same content.
         # print(signature)  #--> Verified, same content.
         try:
@@ -136,7 +141,12 @@ def user_document_verification(request, id):
                 current_user.public_key = public_key_pem.decode('utf-8')
                 current_user.save()
             messages.info(request, 'Document Verification Successful')
-            return redirect('login_page')
+            response_data = {
+                'success': True,
+                'url': '/login'
+            }
+            return JsonResponse(response_data)
+            # return redirect('login_page')
             # return render(request, 'user_document_verification_result.html', {'public_key_pem':public_key_pem, 'public_key':public_key, 'originalFile':originalFileContents,
             #                                                                 'signature': signature, 'result': verification_result})
     
