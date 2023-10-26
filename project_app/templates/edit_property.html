@@ -49,7 +49,7 @@
             cursor: pointer;
         }
 
-        .date-fields {
+        .duration {
             display: none;
         }
 
@@ -152,16 +152,13 @@
                 <label class="radio-label" for="rent">Rent</label>
             </span>
 
-            <div class="date-fields">
-                <label for="availability-from">Available From:</label>
-                <input type="date" id="availability-from" name="availability-from">
-                
-                <label for="availability-till">Available Till:</label>
-                <input type="date" id="availability-till" name="availability-till">
+            <div class="duration">
+                <label for="duration">Duration (in Months):</label>
+                <input type="number" id="duration" name="duration" min="1" max="240">
             </div>
             
             <label for="price">Price (in Rs.):</label>
-            <input type="number" id="price" name="price" required value="{{property.price}}" max="1000000000">
+            <input type="number" id="price" name="price" required value="{{property.price}}" min="0" max="1000000000">
             
             <label for="facilities">Facilities (Select one):</label>
             <select id="facilities" name="facilities" required value="{{property.facilities}}">
@@ -174,27 +171,6 @@
             <button type="submit">Update</button>
         </form>
     </div>
-
-    <script>
-        const contractType = document.querySelectorAll('input[name="contract-type"]');
-        const dateFields = document.querySelector('.date-fields');
-
-        
-
-        contractType.forEach(function (radio) {
-            radio.addEventListener('change', function () {
-                if (this.value === 'RENT') {
-                    dateFields.style.display = 'block';
-                    var price_element = document.getElementById('price');
-                    price_element.setAttribute("max","5100000");
-                } else {
-                    var price_element = document.getElementById('price');
-                    price_element.setAttribute("max","1000000000");
-                    dateFields.style.display = 'none';
-                }
-            });    
-        });
-    </script>
     <div class="message-container">
         {% if messages %}
             <ul class="messages">
@@ -206,6 +182,34 @@
     </div>
 
     <script>
+        const contractType = document.querySelectorAll('input[name="contract-type"]');
+        const dateFields = document.querySelector('.duration');
+
+        
+
+        contractType.forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                if (this.value === 'RENT') {
+                    var duration_element = document.getElementById('duration');
+                    // duration_element.setAttribute('required', true);
+                    duration_element.required = true;
+                    dateFields.style.display = 'block';
+                    var price_element = document.getElementById('price');
+                    price_element.setAttribute("max","5100000");
+                    if('{{property.type}}'.toLocaleLowerCase() == 'rent'){
+                        durationElement.value = '{{property.duration}}';
+                    }
+                } else {
+                    var duration_element = document.getElementById('duration');
+                    // duration_element.setAttribute('required', false);
+                    duration_element.required = false;
+                    duration_element.value = '';
+                    var price_element = document.getElementById('price');
+                    price_element.setAttribute("max","1000000000");
+                    dateFields.style.display = 'none';
+                }
+            });    
+        });
         // Setting the state value
         // var selectElement = document.getElementById("state");
         // var existingState = "{{property.state}}";
@@ -243,10 +247,6 @@
             sellContract.checked = true;
             price_element = document.getElementById('price');
             price_element.setAttribute("max","1000000000");
-            var startingDate = document.getElementById("availability-from")
-            startingDate.value = new Date("0000-00-00");
-            var endingDate = document.getElementById("availability-till")
-            endingDate.value = new Date("0000-00-00");
         }
         else{
             // Update the radio button corresponding to rent 
@@ -254,38 +254,40 @@
             price_element = document.getElementById('price');
             price_element.setAttribute("max","5100000");
             // Update the dates
-            const dateFields = document.querySelector('.date-fields');
+            const dateFields = document.querySelector('.duration');
             dateFields.style.display = 'block';
-            var startingDate = document.getElementById("availability-from")
-            var endingDate = document.getElementById("availability-till")
-            function parseDate(inputDate) {
-                var parts = inputDate.split(/[\s,]+/);
-                var monthMapping = {
-                    "Jan.": 0,
-                    "Feb.": 1,
-                    "Mar.": 2,
-                    "Apr.": 3,
-                    "May": 4,
-                    "Jun.": 5,
-                    "Jul.": 6,
-                    "Aug.": 7,
-                    "Sep.": 8,
-                    "Oct.": 9,
-                    "Nov.": 10,
-                    "Dec.": 11
-                };
-                var month = monthMapping[parts[0]];
-                var day = parseInt(parts[1], 10);
-                var year = parseInt(parts[2], 10);
-                // console.log(day, month, year);
-                var dateString = year.toString() + "-" + month.toString() + "-" + day.toString();
-                // console.log(dateString);
-                var formattedDate = new Date(year, month, day);
-                formattedDate = formattedDate.getFullYear() + '-' + String(formattedDate.getMonth() + 1).padStart(2, '0') + '-' + String(formattedDate.getDate()).padStart(2, '0');
-                return formattedDate;
-            }
-            startingDate.value = parseDate('{{property.starting_date}}');
-            endingDate.value = parseDate('{{property.ending_date}}');
+            var durationElement = document.getElementById("duration");
+            durationElement.value = '{{property.duration}}';
+            // var startingDate = document.getElementById("availability-from")
+            // var endingDate = document.getElementById("availability-till")
+            // function parseDate(inputDate) {
+            //     var parts = inputDate.split(/[\s,]+/);
+            //     var monthMapping = {
+            //         "Jan.": 0,
+            //         "Feb.": 1,
+            //         "Mar.": 2,
+            //         "Apr.": 3,
+            //         "May": 4,
+            //         "Jun.": 5,
+            //         "Jul.": 6,
+            //         "Aug.": 7,
+            //         "Sep.": 8,
+            //         "Oct.": 9,
+            //         "Nov.": 10,
+            //         "Dec.": 11
+            //     };
+            //     var month = monthMapping[parts[0]];
+            //     var day = parseInt(parts[1], 10);
+            //     var year = parseInt(parts[2], 10);
+            //     // console.log(day, month, year);
+            //     var dateString = year.toString() + "-" + month.toString() + "-" + day.toString();
+            //     // console.log(dateString);
+            //     var formattedDate = new Date(year, month, day);
+            //     formattedDate = formattedDate.getFullYear() + '-' + String(formattedDate.getMonth() + 1).padStart(2, '0') + '-' + String(formattedDate.getDate()).padStart(2, '0');
+            //     return formattedDate;
+            // }
+            // startingDate.value = parseDate('{{property.starting_date}}');
+            // endingDate.value = parseDate('{{property.ending_date}}');
             // console.log('{{property.starting_date}}')
         }
     </script>

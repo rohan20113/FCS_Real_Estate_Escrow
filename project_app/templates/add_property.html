@@ -49,7 +49,7 @@
             cursor: pointer;
         }
 
-        .date-fields {
+        .duration-fields {
             display: none;
         }
 
@@ -150,16 +150,13 @@
                 <label class="radio-label" for="rent">Rent</label>
             </span>
 
-            <div class="date-fields">
-                <label for="availability-from">Available From:</label>
-                <input type="date" id="availability-from" name="availability-from">
-                
-                <label for="availability-till">Available Till:</label>
-                <input type="date" id="availability-till" name="availability-till">
+            <div class="duration-fields">
+                <label for="duration">Duration (in Months):</label>
+                <input type="number" id="duration" name="duration" min="1" max="240">
             </div>
             
             <label for="price">Price (in Rs.):</label>
-            <input type="number" id="price" name="price" required max="1000000000">              
+            <input type="number" id="price" name="price" required min = "0" max="1000000000">              
             
             <label for="facilities">Facilities (Select one):</label>
             <select id="facilities" name="facilities" required>
@@ -174,15 +171,24 @@
 
     <script>
         const contractType = document.querySelectorAll('input[name="contract-type"]');
-        const dateFields = document.querySelector('.date-fields');
+        const dateFields = document.querySelector('.duration-fields');
 
         contractType.forEach(function (radio) {
             radio.addEventListener('change', function () {
                 if (this.value === 'RENT') {
+                    var duration_element = document.getElementById('duration');
+                    // duration_element.setAttribute('required', true);
+                    duration_element.required = true;
                     dateFields.style.display = 'block';
                     var price_element = document.getElementById('price');
                     price_element.setAttribute("max","5100000");
                 } else {
+                    var duration_element = document.getElementById('duration');
+                    // duration_element.setAttribute('required', false);
+                    duration_element.required = false;
+                    duration_element.value = '';
+                    var price_element = document.getElementById('price');
+                    price_element.setAttribute("max","1000000000");
                     dateFields.style.display = 'none';
                 }
             });

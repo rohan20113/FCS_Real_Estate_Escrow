@@ -1,7 +1,5 @@
 from django.db import models
-from django import forms
-# from django.forms import fields
-# from django.forms import fields
+from django.core.validators import MaxValueValidator
 
 # Create your models here.
 class AppUser(models.Model):
@@ -27,14 +25,15 @@ class Property(models.Model):
     city = models.CharField(max_length=30,  null= False, blank=False, default = None)
     pincode = models.CharField(max_length=6,  null= False, blank=False, default = None)
     type = models.CharField(max_length=4,  null= False, blank=False, default = None)
+    duration = models.DecimalField(decimal_places=0, max_digits=3, validators=[MaxValueValidator(limit_value=240)], null = True, blank = True, default = None)
     # YYYY-MM-DD
-    starting_date = models.DateField(null = True, blank = True, default= None)
-    ending_date = models.DateField(null = True, blank = True, default= None)
+    # starting_date = models.DateField(null = True, blank = True, default= None)
+    # ending_date = models.DateField(null = True, blank = True, default= None)
     price = models.DecimalField(decimal_places=0, max_digits=10, null = True, blank = True, default= 0)
     facilities = models.CharField(max_length=20,  null= False, blank=False, default = None)
 
     def __str__(self):
-        return f"{self.owner} {self.address_line_1} {self.address_line_2} {self.state} {self.city} {self.pincode} {self.type} {self.starting_date} {self.ending_date} Rs{self.price} {self.facilities}" 
+        return f"{self.owner} {self.address_line_1} {self.address_line_2} {self.state} {self.city} {self.pincode} {self.type} {self.duration} Rs{self.price} {self.facilities}" 
 
 
 class Property_Transfer_Contract(models.Model):
@@ -60,7 +59,7 @@ class RentalsContract(models.Model):
     party_type = models.CharField(max_length=1, null = False, blank = False, default = False)
     # 0-> owner & 1-> other_party
     property_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = False) 
-    duration = models.DecimalField(decimal_places=0, max_digits=4, null = False, blank = False, default = False)
+    duration = models.DecimalField(decimal_places=0, max_digits=3, null = False, blank = False, default = False)
     price = models.DecimalField(decimal_places=0, max_digits=7, null = False, blank = False, default = False)
     date_of_contract = models.DateField(null = False, blank = False, default= False)
 

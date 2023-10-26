@@ -303,12 +303,16 @@ def add_property(request):
         input_facilities = request.POST['facilities']
         input_contract_type = request.POST['contract-type']
         input_price = request.POST['price']
-        input_availability_from = request.POST['availability-from']
-        input_availability_till = request.POST['availability-till']
+        input_duration = None
+        if input_contract_type == 'RENT':
+            input_duration = request.POST['duration']
+        # input_availability_from = request.POST['availability-from']
+        # input_availability_till = request.POST['availability-till']
         # print(type(input_availability_till))
         # print((input_availability_till), (input_availability_till).reverse())
-        if(input_contract_type == 'RENT' and (input_availability_from == '' or input_availability_till == '')):
-            messages.info(request, 'PLEASE FILL AVAILABILITY DATES')
+        print(input_contract_type, input_duration)
+        if(input_contract_type == 'RENT' and (input_duration == None or len(input_duration) == 0)):
+            messages.info(request, 'PLEASE FILL DURATION OF RENT')
             return redirect('add_property_page')
         # print(input_availability_from, input_availability_till, input_contract_type, input_state, input_facilities)
 
@@ -320,7 +324,7 @@ def add_property(request):
             # input_availability_from = date[2] + '-' + date[1] + '-' + date[0]
             # print(input_availability_from, input_availability_till)
             property_to_be_added = Property.objects.create(owner = username, address_line_1 = input_addr_l1, address_line_2 = input_addr_l2, state = input_state,
-            city = input_city, pincode = input_pin_code, type = input_contract_type, starting_date = input_availability_from, ending_date = input_availability_till,
+            city = input_city, pincode = input_pin_code, type = input_contract_type, duration = input_duration,
             price = input_price, facilities = input_facilities)
             property_to_be_added.save()
             return redirect('dashboard_page')   
@@ -412,10 +416,13 @@ def update_property(request, id):
         input_facilities = request.POST['facilities']
         input_contract_type = request.POST['contract-type']
         input_price = request.POST['price']
-        input_availability_from = request.POST['availability-from']
-        input_availability_till = request.POST['availability-till']
-        if(input_contract_type == 'RENT' and (input_availability_from == '' or input_availability_till == '')):
-            messages.info(request, 'PLEASE FILL AVAILABILITY DATES')
+        input_duration = None
+        if input_contract_type == 'RENT':
+            input_duration = request.POST['duration']
+        # input_availability_from = request.POST['availability-from']
+        # input_availability_till = request.POST['availability-till']
+        if(input_contract_type == 'RENT' and (input_duration is None or input_duration == '')):
+            messages.info(request, 'PLEASE FILL RENTAL DURATION')
             return redirect('edit_property_page')
         # print(input_availability_from, input_availability_till, input_contract_type, input_state, input_facilities)
 
@@ -427,9 +434,10 @@ def update_property(request, id):
             # property_instance.state = input_state
             # property_instance.city = input_city
             # property_instance.pincode = input_pin_code
-            # property_instance.type = input_contract_type
-            property_instance.starting_date = input_availability_from
-            property_instance.ending_date = input_availability_till
+            property_instance.type = input_contract_type
+            # property_instance.starting_date = input_availability_from
+            # property_instance.ending_date = input_availability_till
+            property_instance.duration = input_duration
             property_instance.price = input_price
             property_instance.facilities = input_facilities
             property_instance.save()
@@ -443,8 +451,9 @@ def update_property(request, id):
             # property_instance.city = input_city
             # property_instance.pincode = input_pin_code
             property_instance.type = input_contract_type
-            property_instance.starting_date = None
-            property_instance.ending_date = None
+            property_instance.duration = None
+            # property_instance.starting_date = None
+            # property_instance.ending_date = None
             # print(property_instance.starting_date)
             # print(property_instance.ending_date)
             property_instance.price = input_price
@@ -602,7 +611,7 @@ def payment_gateway(request, id):
     property_object = Property.objects.get(id = current_property_id)
     property_type = property_object.type
     if(property_type.lower() == 'rent'):
-        required_amount = 12 * property_object.price
+        required_amount = property_object.duration * property_object.price
     else:
         required_amount = property_object.price
     print("REQUIRED_AMOUNT: ", required_amount, "\nBALANCE AVAILABLE: ", current_user_balance)
@@ -615,8 +624,8 @@ def payment_gateway(request, id):
                                 'application_id':current_application.id, 'date_of_contract': date.today(), 
                                 'post_balance': current_user_balance-required_amount}
     if(property_type.lower == 'rent'):
-        payment_contract_details['duration'] = '12 Months' 
-    print(payment_contract_details)
+        payment_contract_details['duration'] = property_object.duration 
+    # print(payment_contract_details)
     return render(request, 'payment_gateway.html', {'contract': payment_contract_details})
 
 def process_payment(request, id):
@@ -639,7 +648,7 @@ def process_payment(request, id):
     property_object = Property.objects.get(id = current_property_id)
     property_type = property_object.type
     if(property_type.lower() == 'rent'):
-        required_amount = 12 * property_object.price
+        required_amount = property_object.duration * property_object.price
     else:
         required_amount = property_object.price
     # print("REQUIRED_AMOUNT: ", required_amount, "\nBALANCE AVAILABLE: ", current_user_balance)

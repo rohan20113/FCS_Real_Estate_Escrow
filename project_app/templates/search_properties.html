@@ -222,13 +222,15 @@
                 <!-- Add more options as needed -->
             </select>
             <br></br>
-            <label class = "filter-label" for="availability-from">Available From:</label>
+            <label class = "filter-label" for="filter-duration">Max Rental Duration(in M):</label>
+            <input type="number" id="filter-duration" name="duration" min="0">
+            <!-- <label class = "filter-label" for="availability-from">Available From:</label>
             <input type="date" id="filter-availability-from" name="availability-from">
             <label class = "filter-label-fourth" for="availability-till">Available Till:</label>
-            <input type="date" id="filter-availability-till" name="availability-till">
+            <input type="date" id="filter-availability-till" name="availability-till"> -->
             <br></br>
             <label class="filter-label" for="filter-price">Max Price(in Rs.):</label>
-            <input type="number" id="filter-price" placeholder="Enter max price">
+            <input type="number" id="filter-price" placeholder="Enter max price" min="0">
             <button type="button" class="search-button" id="search-button">Search</button>
             <!-- <a class="search-button" href="/search_properties">Search</a> -->
             
@@ -254,8 +256,7 @@
                         <th>PIN-CODE</th>
                         <th>STATE</th>
                         <th>Contract Type</th>
-                        <th>Available from</th>
-                        <th>Available till</th>
+                        <th>Rental Duration(M)</th>
                         <th>Price (in Rs.)</th>
                         <th>Facilities</th>
                         <th>Action</th>
@@ -271,8 +272,7 @@
                         <td>{{ property.pincode }}</td>
                         <td>{{ property.state }}</td>
                         <td>{{ property.type }}</td>
-                        <td>{{ property.starting_date }}</td>
-                        <td>{{ property.ending_date }}</td>
+                        <td>{{ property.duration }}</td>
                         <td>{{ property.price }}</td>
                         <td>{{ property.facilities }}</td>
                         <td>
@@ -295,8 +295,9 @@
         const filterFacilities = document.getElementById('filter-facilities');
         const filterType = document.getElementById('filter-type');
         const filterPrice = document.getElementById('filter-price');
-        const filterStartingDate = document.getElementById('filter-availability-from');
-        const filterEndingDate = document.getElementById('filter-availability-till');
+        const filterDuration = document.getElementById('filter-duration');
+        // const filterStartingDate = document.getElementById('filter-availability-from');
+        // const filterEndingDate = document.getElementById('filter-availability-till');
         // console.log(applications_json_data);
         // console.log(filterEndingDate.value)
         // console.log(filterStartingDate.value === '')
@@ -308,8 +309,9 @@
             const facilities = filterFacilities.value;
             const contractType = filterType.value;
             const maxPrice = filterPrice.value;
-            const startingDate = filterStartingDate.value;
-            const endingDate = filterEndingDate.value;
+            const maxDuration = filterDuration.value;
+            // const startingDate = filterStartingDate.value;
+            // const endingDate = filterEndingDate.value;
             // console.log(endingDate)
             // console.log("STARTING DATE FILTER: " + startingDate)
             // console.log(city + " " + state + " " + facilities + " " + contractType + " " + maxPrice + " " + startingDate)
@@ -333,121 +335,121 @@
                 var rowData = row.textContent.toLowerCase();
                 // console.log(cells[3].textContent.toLocaleLowerCase());
                 // console.log(city.toLocaleLowerCase());
-                function parseDate(inputDate) {
-                    var parts = inputDate.split(/[\s,]+/);
-                    var monthMapping = {
-                        "Jan.": 1,
-                        "Feb.": 2,
-                        "Mar.": 3,
-                        "Apr.": 4,
-                        "May": 5,
-                        "Jun.": 6,
-                        "Jul.": 7,
-                        "Aug.": 8,
-                        "Sep.": 9,
-                        "Oct.": 10,
-                        "Nov.": 11,
-                        "Dec.": 12
-                    };
-                    var month = monthMapping[parts[0]];
-                    // console.log("Month:" + month)
-                    var day = parseInt(parts[1], 10);
-                    var year = parseInt(parts[2], 10);
-                    // console.log("dd-mm-yyy:" +day+"-" + month +"-" + year);
-                    var dateString = year.toString() + "-" + month.toString() + "-" + day.toString();
-                    // console.log("dateString:", dateString)
-                    return dateString;
-                    // console.log(dateString);
-                    // var formattedDate = new Date(year, month, day);
-                    // formattedDate = formattedDate.getFullYear() + '-' + String(formattedDate.getMonth() + 1).padStart(2, '0') + '-' + String(formattedDate.getDate()).padStart(2, '0');
-                    // return formattedDate;
-                }
+                // function parseDate(inputDate) {
+                //     var parts = inputDate.split(/[\s,]+/);
+                //     var monthMapping = {
+                //         "Jan.": 1,
+                //         "Feb.": 2,
+                //         "Mar.": 3,
+                //         "Apr.": 4,
+                //         "May": 5,
+                //         "Jun.": 6,
+                //         "Jul.": 7,
+                //         "Aug.": 8,
+                //         "Sep.": 9,
+                //         "Oct.": 10,
+                //         "Nov.": 11,
+                //         "Dec.": 12
+                //     };
+                //     var month = monthMapping[parts[0]];
+                //     // console.log("Month:" + month)
+                //     var day = parseInt(parts[1], 10);
+                //     var year = parseInt(parts[2], 10);
+                //     // console.log("dd-mm-yyy:" +day+"-" + month +"-" + year);
+                //     var dateString = year.toString() + "-" + month.toString() + "-" + day.toString();
+                //     // console.log("dateString:", dateString)
+                //     return dateString;
+                //     // console.log(dateString);
+                //     // var formattedDate = new Date(year, month, day);
+                //     // formattedDate = formattedDate.getFullYear() + '-' + String(formattedDate.getMonth() + 1).padStart(2, '0') + '-' + String(formattedDate.getDate()).padStart(2, '0');
+                //     // return formattedDate;
+                // }
                 // console.log("DATE FILTER: " + startingDate)
                 // console.log("DATE CURRENT: " )
                 // console.log("DATE: " + cells[7].textContent )
-                var existingDate = '';
-                if(cells[7].textContent != 'None' && cells[7].textContent!== ''){
-                    // console.log(cells[7].textContent)
-                    // console.log(typeof cells[7].textContent)
-                    // console.log(cells[7].textContent == 'None')
-                    existingDate = parseDate(cells[7].textContent)
-                    // console.log(existingDate);
-                }
-                available_from_flag = false;
-                if(startingDate == ''){
-                    available_from_flag = true;
-                }
-                if(existingDate !== '' && startingDate!== ''){
-                    console.log(existingDate + " : " + startingDate);
-                    // Existing Date -> date of the property:
-                    existing_parts = existingDate.split('-');
-                    filter_parts = startingDate.split('-');
+                // var existingDate = '';
+                // if(cells[7].textContent != 'None' && cells[7].textContent!== ''){
+                //     // console.log(cells[7].textContent)
+                //     // console.log(typeof cells[7].textContent)
+                //     // console.log(cells[7].textContent == 'None')
+                //     existingDate = parseDate(cells[7].textContent)
+                //     // console.log(existingDate);
+                // }
+                // available_from_flag = false;
+                // if(startingDate == ''){
+                //     available_from_flag = true;
+                // }
+                // if(existingDate !== '' && startingDate!== ''){
+                //     console.log(existingDate + " : " + startingDate);
+                //     // Existing Date -> date of the property:
+                //     existing_parts = existingDate.split('-');
+                //     filter_parts = startingDate.split('-');
 
-                    // yyyy - mm - dd
-                    if(parseFloat(existing_parts[0]) > parseFloat(filter_parts[0])){
-                        // console.log("hi1");
-                        available_from_flag = true;
-                    }else{
-                        if((parseFloat(existing_parts[0]) == parseFloat(filter_parts[0])) && (parseFloat(existing_parts[1]) > parseFloat(filter_parts[1]))){
-                            // console.log("hi2");
-                            available_from_flag = true;
-                        }
-                        else{
-                            if((parseFloat(existing_parts[0]) == parseFloat(filter_parts[0])) && (parseFloat(existing_parts[1]) == parseFloat(filter_parts[1])) && (parseFloat(existing_parts[2]) >= parseFloat(filter_parts[2]))){
-                                // console.log("hi3");
-                                available_from_flag = true;
-                            }
-                        }
-                    }
-                }else{
-                    available_from_flag = true;
-                }
+                //     // yyyy - mm - dd
+                //     if(parseFloat(existing_parts[0]) > parseFloat(filter_parts[0])){
+                //         // console.log("hi1");
+                //         available_from_flag = true;
+                //     }else{
+                //         if((parseFloat(existing_parts[0]) == parseFloat(filter_parts[0])) && (parseFloat(existing_parts[1]) > parseFloat(filter_parts[1]))){
+                //             // console.log("hi2");
+                //             available_from_flag = true;
+                //         }
+                //         else{
+                //             if((parseFloat(existing_parts[0]) == parseFloat(filter_parts[0])) && (parseFloat(existing_parts[1]) == parseFloat(filter_parts[1])) && (parseFloat(existing_parts[2]) >= parseFloat(filter_parts[2]))){
+                //                 // console.log("hi3");
+                //                 available_from_flag = true;
+                //             }
+                //         }
+                //     }
+                // }else{
+                //     available_from_flag = true;
+                // }
 
-                // filter for ending-date
-                var existingEndingDate = '';
-                if(cells[8].textContent != 'None' && cells[8].textContent !== ''){
-                    existingEndingDate = parseDate(cells[8].textContent)
-                    // console.log(existingDate);
-                }
-                available_till_flag = false;
-                if(endingDate == ''){
-                    available_till_flag = true;
-                }
-                if(existingEndingDate !== '' && endingDate !== ''){
-                    console.log(existingEndingDate + " : " + endingDate);
-                    // Existing Date -> date of the property:
-                    existingEnding_parts = existingEndingDate.split('-');
-                    filterEnding_parts = endingDate.split('-');
-                    // console.log(existingEnding_parts + ' : ' +filterEnding_parts)
-                    // yyyy - mm - dd
-                    if(parseFloat(existingEnding_parts[0]) < parseFloat(filterEnding_parts[0])){
-                        // console.log("hi1");
-                        available_till_flag = true;
-                    }else{
-                        if((parseFloat(existingEnding_parts[0]) == parseFloat(filterEnding_parts[0])) && (parseFloat(existingEnding_parts[1]) < parseFloat(filterEnding_parts[1]))){
-                            // console.log("hi2");
-                            available_till_flag = true;
-                        }
-                        else{
-                            if((parseFloat(existingEnding_parts[0]) == parseFloat(filterEnding_parts[0])) && (parseFloat(existingEnding_parts[1]) == parseFloat(filterEnding_parts[1])) && (parseFloat(existingEnding_parts[2]) <= parseFloat(filterEnding_parts[2]))){
-                                // console.log("hi3");
-                                available_till_flag = true;
-                            }
-                        }
-                    }
-                }else{
-                    available_till_flag = true;
-                }
-
+                // // filter for ending-date
+                // var existingEndingDate = '';
+                // if(cells[8].textContent != 'None' && cells[8].textContent !== ''){
+                //     existingEndingDate = parseDate(cells[8].textContent)
+                //     // console.log(existingDate);
+                // }
+                // available_till_flag = false;
+                // if(endingDate == ''){
+                //     available_till_flag = true;
+                // }
+                // if(existingEndingDate !== '' && endingDate !== ''){
+                //     console.log(existingEndingDate + " : " + endingDate);
+                //     // Existing Date -> date of the property:
+                //     existingEnding_parts = existingEndingDate.split('-');
+                //     filterEnding_parts = endingDate.split('-');
+                //     // console.log(existingEnding_parts + ' : ' +filterEnding_parts)
+                //     // yyyy - mm - dd
+                //     if(parseFloat(existingEnding_parts[0]) < parseFloat(filterEnding_parts[0])){
+                //         // console.log("hi1");
+                //         available_till_flag = true;
+                //     }else{
+                //         if((parseFloat(existingEnding_parts[0]) == parseFloat(filterEnding_parts[0])) && (parseFloat(existingEnding_parts[1]) < parseFloat(filterEnding_parts[1]))){
+                //             // console.log("hi2");
+                //             available_till_flag = true;
+                //         }
+                //         else{
+                //             if((parseFloat(existingEnding_parts[0]) == parseFloat(filterEnding_parts[0])) && (parseFloat(existingEnding_parts[1]) == parseFloat(filterEnding_parts[1])) && (parseFloat(existingEnding_parts[2]) <= parseFloat(filterEnding_parts[2]))){
+                //                 // console.log("hi3");
+                //                 available_till_flag = true;
+                //             }
+                //         }
+                //     }
+                // }else{
+                //     available_till_flag = true;
+                // }
+                
+                // console.log(typeof cells[7] + " " + cells[7].textContent + " \n" + cells[7]);
                 // Applying Filters: 
                 if (
                     (city !== '' && cells[3].textContent.toLowerCase() !== city.toLowerCase()) ||
                     (state !== '' && cells[5].textContent.toLowerCase() !== state.toLowerCase()) ||
-                    (facilities !== '' && cells[10].textContent.toLowerCase()!== facilities.toLowerCase()) || 
+                    (facilities !== '' && cells[9].textContent.toLowerCase()!== facilities.toLowerCase()) || 
                     (contractType !== '' && cells[6].textContent.toLowerCase()!== contractType.toLowerCase()) ||
-                    (maxPrice !== '' && parseFloat(cells[9].textContent) > parseFloat(maxPrice)) ||
-                    (existingDate !== '' && available_from_flag === false && startingDate !== '' ) ||
-                    (existingEndingDate !== '' && available_till_flag === false && endingDate !== '' ) 
+                    (maxPrice !== '' && parseFloat(cells[8].textContent) > parseFloat(maxPrice)) ||
+                    (maxDuration !== '' && (cells[7].textContent != 'None' &&  parseInt(cells[7].textContent) > maxDuration))
                 ) {
                     row.style.display = 'none';
                 }else {
