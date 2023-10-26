@@ -573,24 +573,109 @@ def accept_property_application(request, id):
         return redirect('/login')
     
     # fetching the object
-    current_application = PropertyApplications.objects.get(id = id)
-    current_property = current_application.property_id
+    # current_application = PropertyApplications.objects.get(id = id)
+    # current_property = current_application.property_id
 
-    # PAYMENT GATEWAY & EKYC NEEDS TO PERFORMED HERE
+    # # Changing the current request's status
+    # current_application.status = 'ACCEPTED'
+    # current_application.save()
+    # messages.info(request, 'Succesfully Updated Request')
 
-    # Changing the current request's status
-    current_application.status = 'ACCEPTED'
-    current_application.save()
-    messages.info(request, 'Succesfully Updated Request')
     
-    # Rejecting all other pending requests.
-    applications = PropertyApplications.objects.filter(property_id=current_property, status='PENDING')
-    for application in applications:
-        application.status = 'REJECTED'
-        application.save()
+    # # Rejecting all other pending requests.
+    # applications = PropertyApplications.objects.filter(property_id=current_property, status='PENDING')
+    # for application in applications:
+    #     application.status = 'REJECTED'
+    #     application.save()
     
-    messages.info(request, "Application Accepted!\n Please Wait for Payment.")
-    return redirect('my_properties_page')
+    # Create another contract and pass it to the next api. 
+
+    # messages.info(request, "Application Accepted!\n Please Wait for Payment.")
+    return redirect('seller_contract_page', id = id)
+
+def seller_contract(request, id):
+    username = request.session.get('username')
+    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+            return redirect('/')
+    if(username is None):
+        return redirect('/login')
+    
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        base64JsonString = data.get('contract_payload', None)
+        jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
+        signature = base64.b64decode(data.get('signature', None))
+        # print('JSON STRING',jsonString)
+        # print('SIGNATURE',signature)
+
+        # Create hash of the same payload and then verify the signatures. 
+        # If correct, then accept the application, create a contract and save the data in the table.
+        public_key_pem = AppUser.objects.get(username = username).public_key
+        public_key = RSA.import_key(public_key_pem)
+        # print(public_key)
+        # Create a hash of the original file contents
+        h = SHA256.new(base64JsonString.encode('utf-8'))
+        try:
+            verifier = pkcs1_15.new(public_key)
+            if verifier.verify(h, signature) is None:
+                # Approve the application & reject others.
+                # fetching the object
+                current_application = PropertyApplications.objects.get(id = id)
+                current_property = current_application.property_id
+
+                # Changing the current request's status
+                current_application.status = 'ACCEPTED'
+                current_application.save()
+                
+                # Rejecting all other pending requests.
+                applications = PropertyApplications.objects.filter(property_id=current_property, status='PENDING')
+                for application in applications:
+                    application.status = 'REJECTED'
+                    application.save()
+                
+                # Create a contract object and save the string. 
+
+                
+                messages.success(request, 'Successfully approved the application')
+                response_data = {
+                    'success': True,
+                    'url': '/my_properties/'
+                }
+                return JsonResponse(response_data)
+        except Exception as e:
+            messages.error(request, 'Signature Error!\n Please Try Again.')
+            response_data = {
+                'success': False,
+                'url': f'/seller_contract/{id}'
+            }
+            return JsonResponse(response_data)
+    else:
+        # Fetch the current application object.
+        current_application = PropertyApplications.objects.get(id = id)
+        property = Property.objects.get(id = current_application.property_id)
+
+        property_address = property.address_line_1 + " " +  property.address_line_2
+        property_state = property.state
+        property_city = property.city
+        property_pincode = property.pincode
+        contract_value = property.price
+        date_of_agreement = date.today()
+
+        buyer = AppUser.objects.get(username = current_application.interested_user)
+        buyer_name = buyer.first_name + " " + buyer.second_name
+
+        seller = AppUser.objects.get(username = username)
+        seller_name = seller.first_name +  " " + seller.second_name        
+
+        # Sending contract details to be displayed.
+        resp_data =  {'application_id': id, 'buyer_username':current_application.interested_user,
+                      'buyer_name': buyer_name, 'seller_username': username, 'seller_name': seller_name,
+                      'property_id': current_application.property_id,  'property_address': property_address,
+                      'city': property_city, 'state': property_state, 'pincode': property_pincode, 
+                      'contract_value': contract_value, 'date_of_agreement': date_of_agreement
+                      }
+        messages.info(request, 'Sign the above contract.')
+        return render(request, 'seller_contract.html', resp_data)
 
 def payment_gateway(request, id):
     username = request.session.get('username')
