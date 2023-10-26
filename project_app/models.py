@@ -37,22 +37,23 @@ class Property(models.Model):
 
 
 class Property_Transfer_Contract(models.Model):
-    application_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = False)
-    property_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = False)
+    id = models.AutoField(primary_key=True)
+    application_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = None)
+    property_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = None)
     property_address_line_1 = models.CharField(max_length=30,  null= False, blank=False, default = None)
     property_address_line_2 = models.CharField(max_length=30,  null= False, blank=True, default = '')
     property_state = models.CharField(max_length=30,  null= False, blank=False, default = None)
     property_city = models.CharField(max_length=30,  null= False, blank=False, default = None)
     property_pincode = models.CharField(max_length=6,  null= False, blank=False, default = None) 
-    buyer = models.CharField(max_length=30,  null= False, blank=False, default = False)
+    buyer = models.CharField(max_length=30,  null= False, blank=False, default = None)
     first_name_buyer = models.CharField(max_length=30, null= False, blank=False, default = None)
     second_name_buyer = models.CharField(max_length=30, default= None)
-    seller = models.CharField(max_length=30,  null= False, blank=False, default = False)
+    seller = models.CharField(max_length=30,  null= False, blank=False, default = None)
     first_name_seller = models.CharField(max_length=30, null= False, blank=False, default = None)
     second_name_seller = models.CharField(max_length=30, default= None)
-    price = models.DecimalField(decimal_places=0, max_digits= 10, null = False, blank = False, default = False)
-    date_of_contract = models.DateField(null = False, blank = False, default= False)
-    signature = models.CharField(max_length=512, null= False, blank=False, default = None)
+    price = models.DecimalField(decimal_places=0, max_digits= 10, null = False, blank = False, default = None)
+    date_of_contract = models.DateField(null = False, blank = False, default= None)
+    token = models.CharField(max_length=512, null= False, blank=False, default = None)
 
     def __str__(self):
         return f"{self.application_id} {self.property_id} {self.buyer} {self.seller} {self.price} {self.date_of_contract} "

@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, reverse
-from .models import AppUser, Property, PropertyApplications
+from .models import AppUser, Property, PropertyApplications, Property_Transfer_Contract
 from django.contrib import messages
 from django.http import JsonResponse
 import hashlib, json
@@ -634,8 +634,8 @@ def seller_contract(request, id):
                     application.save()
                 
                 # Create a contract object and save the string. 
-
                 
+
                 messages.success(request, 'Successfully approved the application')
                 response_data = {
                     'success': True,
