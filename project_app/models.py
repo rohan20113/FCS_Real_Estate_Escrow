@@ -52,11 +52,11 @@ class Property_Transfer_Contract(models.Model):
     first_name_seller = models.CharField(max_length=30, null= False, blank=False, default = None)
     second_name_seller = models.CharField(max_length=30, default= None)
     price = models.DecimalField(decimal_places=0, max_digits= 10, null = False, blank = False, default = None)
-    date_of_contract = models.DateField(null = False, blank = False, default= None)
-    token = models.CharField(max_length=512, null= False, blank=False, default = None)
+    date_of_agreement = models.DateField(null = False, blank = False, default= None)
+    token = models.CharField(max_length=2000, null= False, blank=False, default = None)
 
     def __str__(self):
-        return f"{self.application_id} {self.property_id} {self.buyer} {self.seller} {self.price} {self.date_of_contract} "
+        return f"{self.application_id} {self.property_id} {self.buyer} {self.seller} {self.price} {self.date_of_agreement} "
 
 class RentalsContract(models.Model):
     contract_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = False)

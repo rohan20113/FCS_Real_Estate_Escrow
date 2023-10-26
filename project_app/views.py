@@ -603,7 +603,9 @@ def seller_contract(request, id):
     if request.method == 'POST':
         data = json.loads(request.body)
         base64JsonString = data.get('contract_payload', None)
-        jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
+        # jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
+        base64Signature = data.get('signature', None)
+        # signature = base64.b64decode(base64Signature)
         signature = base64.b64decode(data.get('signature', None))
         # print('JSON STRING',jsonString)
         # print('SIGNATURE',signature)
@@ -614,34 +616,10 @@ def seller_contract(request, id):
         public_key = RSA.import_key(public_key_pem)
         # print(public_key)
         # Create a hash of the original file contents
-        h = SHA256.new(base64JsonString.encode('utf-8'))
         try:
+            h = SHA256.new(base64JsonString.encode('utf-8'))
             verifier = pkcs1_15.new(public_key)
-            if verifier.verify(h, signature) is None:
-                # Approve the application & reject others.
-                # fetching the object
-                current_application = PropertyApplications.objects.get(id = id)
-                current_property = current_application.property_id
-
-                # Changing the current request's status
-                current_application.status = 'ACCEPTED'
-                current_application.save()
-                
-                # Rejecting all other pending requests.
-                applications = PropertyApplications.objects.filter(property_id=current_property, status='PENDING')
-                for application in applications:
-                    application.status = 'REJECTED'
-                    application.save()
-                
-                # Create a contract object and save the string. 
-                
-
-                messages.success(request, 'Successfully approved the application')
-                response_data = {
-                    'success': True,
-                    'url': '/my_properties/'
-                }
-                return JsonResponse(response_data)
+            verifier.verify(h, signature)
         except Exception as e:
             messages.error(request, 'Signature Error!\n Please Try Again.')
             response_data = {
@@ -649,6 +627,40 @@ def seller_contract(request, id):
                 'url': f'/seller_contract/{id}'
             }
             return JsonResponse(response_data)
+        
+        # Approve the application & reject others.
+        # fetching the object
+        current_application = PropertyApplications.objects.get(id = id)
+        current_property_id = current_application.property_id
+        property = Property.objects.get(id = current_property_id)
+        # Changing the current request's status
+        current_application.status = 'ACCEPTED'
+        current_application.save()
+        
+        # Rejecting all other pending requests.
+        applications = PropertyApplications.objects.filter(property_id=current_property_id, status='PENDING')
+        for application in applications:
+            application.status = 'REJECTED'
+            application.save()
+        
+        buyer_obj = AppUser.objects.get(username = current_application.interested_user)
+        seller_obj = AppUser.objects.get(username = username)
+        # Create a contract object and save the string. 
+        signed_token = base64JsonString + "." + base64Signature
+        contract_object = Property_Transfer_Contract.objects.create(application_id = id, property_id = current_application.property_id,
+                                                                    property_address_line_1 = property.address_line_1, property_address_line_2 = property.address_line_2,
+                                                                    property_state = property.state, property_city = property.city, property_pincode = property.pincode,
+                                                                    buyer = current_application.interested_user, first_name_buyer = buyer_obj.first_name, second_name_buyer = buyer_obj.second_name,
+                                                                    seller = username, first_name_seller = seller_obj.first_name, second_name_seller = seller_obj.second_name, 
+                                                                    price = property.price, date_of_agreement = date.today(), token = signed_token)
+        contract_object.save()
+        messages.success(request, 'Successfully approved the application')
+        response_data = {
+            'success': True,
+            'url': '/my_properties/'
+        }
+        return JsonResponse(response_data)
+        
     else:
         # Fetch the current application object.
         current_application = PropertyApplications.objects.get(id = id)
