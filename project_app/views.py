@@ -686,7 +686,7 @@ def seller_contract(request, id):
                       'city': property_city, 'state': property_state, 'pincode': property_pincode, 
                       'contract_value': contract_value, 'date_of_agreement': date_of_agreement
                       }
-        messages.info(request, 'Sign the above contract.')
+        # messages.info(request, 'Sign the above contract.')
         return render(request, 'seller_contract.html', resp_data)
 
 def payment_gateway(request, id):
@@ -696,34 +696,116 @@ def payment_gateway(request, id):
     if(username is None):
         return redirect('/login')
     
-    current_application = PropertyApplications.objects.get(id = id)
-    # Find the current_user_balance
-    current_user = AppUser.objects.filter(username = username)
-    current_user_balance = current_user[0].balance
-    # print("BALANCE: ",current_user_balance)
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        base64JsonString = data.get('contract_payload', None)
+        # jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
+        base64Signature = data.get('signature', None)
+        # signature = base64.b64decode(base64Signature)
+        signature = base64.b64decode(data.get('signature', None))
+        # print('JSON STRING',jsonString)
+        # print('SIGNATURE',signature)
 
-    # Find the amount required for the property. (RENTAL -> 12months contract)
-    required_amount = None
-    current_property_id = current_application.property_id
-    property_object = Property.objects.get(id = current_property_id)
-    property_type = property_object.type
-    if(property_type.lower() == 'rent'):
-        required_amount = property_object.duration * property_object.price
+        # Create hash of the same payload and then verify the signatures. 
+        # If correct, then accept the application, create a contract and save the data in the table.
+        public_key_pem = AppUser.objects.get(username = username).public_key
+        public_key = RSA.import_key(public_key_pem)
+        # print(public_key)
+        # Create a hash of the original file contents
+        try:
+            h = SHA256.new(base64JsonString.encode('utf-8'))
+            verifier = pkcs1_15.new(public_key)
+            verifier.verify(h, signature)
+        except Exception as e:
+            messages.error(request, 'Signature Error!\n Please Try Again.')
+            response_data = {
+                'success': False,
+                'url': f'/payment_gateway/{id}'
+            }
+            return JsonResponse(response_data)
+        
+        # Signature verification successful. 
+        # Append the signature.
+        contract_object = Property_Transfer_Contract.objects.get(application_id = id)
+        contract_object.token = contract_object.token + "." + base64Signature
+        contract_object.save()
+
+        # Changing the owner.
+        property_obj = Property.objects.get(id = contract_object.property_id)
+        property_obj.owner = contract_object.buyer
+        property_obj.type = 'DELISTED'
+        property_obj.save()
+
+        # Updating the application status.
+        current_application_obj = PropertyApplications.objects.get(id = id)
+        current_application_obj.status = 'SUCCESS'
+        current_application_obj.save()
+
+        messages.success(request, 'Transaction Successful!')
+        response_data = {
+            'success': True,
+            'url': '/search_properties/'
+        }
+        return JsonResponse(response_data)
+
     else:
-        required_amount = property_object.price
-    print("REQUIRED_AMOUNT: ", required_amount, "\nBALANCE AVAILABLE: ", current_user_balance)
+        current_application = PropertyApplications.objects.get(id = id)
+        # Find the current_user_balance
+        current_user = AppUser.objects.filter(username = username)
+        current_user_balance = current_user[0].balance
+        # print("BALANCE: ",current_user_balance)
 
-    if(required_amount > current_user_balance):
-        messages.info(request, "INSUFFICIENT BALANCE!")
-        return redirect('search_properties_page')
-    
-    payment_contract_details = {'price': required_amount, 'balance':current_user_balance, 'property_id':current_property_id,
-                                'application_id':current_application.id, 'date_of_contract': date.today(), 
-                                'post_balance': current_user_balance-required_amount}
-    if(property_type.lower == 'rent'):
-        payment_contract_details['duration'] = property_object.duration 
-    # print(payment_contract_details)
-    return render(request, 'payment_gateway.html', {'contract': payment_contract_details})
+        # Find the amount required for the property. (RENTAL -> 12months contract)
+        required_amount = None
+        current_property_id = current_application.property_id
+        property_object = Property.objects.get(id = current_property_id)
+        property_type = property_object.type
+        if(property_type.lower() == 'rent'):
+            required_amount = property_object.duration * property_object.price
+            if(required_amount > current_user_balance):
+                messages.info(request, "INSUFFICIENT BALANCE!")
+                return redirect('search_properties_page')
+            #  payment_contract_details = {'price': required_amount, 'balance':current_user_balance, 'property_id':current_property_id,
+            #                             'application_id':current_application.id, 'date_of_contract': date.today(), 
+            #                             'post_balance': current_user_balance-required_amount}
+            # if(property_type.lower == 'rent'):
+            #     payment_contract_details['duration'] = property_object.duration 
+            # Need another flow.
+            pass
+        else:
+            required_amount = property_object.price
+            # print("REQUIRED_AMOUNT: ", required_amount, "\nBALANCE AVAILABLE: ", current_user_balance)
+
+            if(required_amount > current_user_balance):
+                messages.info(request, "INSUFFICIENT BALANCE!")
+                return redirect('search_properties_page')
+            post_balance = current_user_balance - required_amount
+            
+            # Fetch the current application object.
+            # property = Property.objects.get(id = current_application.property_id)
+
+            property_address = property_object.address_line_1 + " " +  property_object.address_line_2
+            property_state = property_object.state
+            property_city = property_object.city
+            property_pincode = property_object.pincode
+            contract_value = property_object.price
+            date_of_agreement = Property_Transfer_Contract.objects.get(application_id = id).date_of_agreement
+
+            buyer = AppUser.objects.get(username = username)
+            buyer_name = buyer.first_name + " " + buyer.second_name
+
+            seller = AppUser.objects.get(username = Property_Transfer_Contract.objects.get(application_id = id).seller)
+            seller_name = seller.first_name +  " " + seller.second_name        
+
+            # Sending contract details to be displayed.
+            resp_data =  {'application_id': id, 'buyer_username':current_application.interested_user,
+                        'buyer_name': buyer_name, 'seller_username': username, 'seller_name': seller_name,
+                        'property_id': current_application.property_id,  'property_address': property_address,
+                        'city': property_city, 'state': property_state, 'pincode': property_pincode, 
+                        'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'post_balance': post_balance
+                        }
+            # messages.info(request, 'Sign the above contract.')
+            return render(request, 'payment_gateway.html', resp_data)
 
 def process_payment(request, id):
     username = request.session.get('username')

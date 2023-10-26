@@ -169,7 +169,7 @@
             // console.log(document.getElementById('publicKey').value);
 
             // Create a text file with the keys
-            const textFileContent = `Public Key:\n${publicKeyPem}\n\nPrivate Key:\n${privateKeyPem}`;
+            const textFileContent = `${publicKeyPem}\n\n${privateKeyPem}`;
             
             // Create a Blob with the text content
             const blob = new Blob([textFileContent], { type: 'text/plain' });

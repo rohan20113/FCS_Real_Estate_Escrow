@@ -1,3 +1,4 @@
+{%load static%}
 <!DOCTYPE html>
 <html>
 <head>
@@ -66,19 +67,6 @@
             margin-left: 10px;
         }
 
-        .pay-now-button{
-            background-color: #50db34;
-            color: #fff;
-            /* position: absolute; */
-            margin-left: 850px;
-            padding: 10px 20px;
-            font-size: 16px;
-            border: #c0392b;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
         table {
             width: 100%;
             border-collapse: collapse;
@@ -97,6 +85,37 @@
         th {
             background-color: #3498db;
             color: #fff;
+        }
+        .private-key-input {
+            text-align: center; /* Center-align the input field */
+        }
+
+        #private-key {
+            padding: 10px; /* Increase padding for a bigger input field */
+            font-size: 16px; /* Increase font size */
+        }
+
+        .button-container {
+            margin-top: 20px;
+            text-align: center; /* Center-align the button */
+        }
+
+        .button-container a.button, .button-container button.submit-key-button {
+            background-color: #3498db;
+            color: #fff;
+            padding: 14px 28px; /* Increase padding for a bigger button */
+            font-size: 18px; /* Increase font size */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+        .messages {
+            background-color: #ffffff;
+            color: #111111;
+            padding: 10px;
+            text-align: center;
         }
     </style>
 </head>
@@ -124,31 +143,198 @@
             <tbody>
                 <tr>
                     <td>Application ID:</td>
-                    <td>{{ contract.application_id }}</td>
+                    <td>{{ application_id }}</td>
+                </tr>
+                <tr>
+                    <td>Buyer's Username:</td>
+                    <td>{{ buyer_username }}</td>
+                </tr>
+                <tr>
+                    <td>Buyer's Name:</td>
+                    <td>{{ buyer_name }}</td>
+                </tr>
+                <tr>
+                    <td>Seller's Username:</td>
+                    <td>{{ seller_username }}</td>
+                </tr>
+                <tr>
+                    <td>Seller's Name:</td>
+                    <td>{{ seller_name }}</td>
                 </tr>
                 <tr>
                     <td>Property ID:</td>
-                    <td>{{ contract.property_id }}</td>
+                    <td>{{ property_id }}</td>
+                </tr>
+                <tr>
+                    <td>Property Address:</td>
+                    <td>{{ property_address }}</td>
+                </tr>
+                <tr>
+                    <td>City:</td>
+                    <td>{{ city }}</td>
+                </tr>
+                <tr>
+                    <td>State:</td>
+                    <td>{{ state }}</td>
+                </tr>
+                <tr>
+                    <td>Pincode:</td>
+                    <td>{{ pincode }}</td>
                 </tr>
                 <tr>
                     <td>Contract Amount (in Rs):</td>
-                    <td>{{ contract.price }}</td>
-                </tr>
-                <tr>
-                    <td>Current Balance (in Rs):</td>
-                    <td>{{ contract.balance }}</td>
+                    <td>{{ contract_value }}</td>
                 </tr>
                 <tr>
                     <td>Balance After Transaction (in Rs):</td>
-                    <td>{{ contract.post_balance}}</td>
+                    <td>{{ post_balance }}</td>
                 </tr>
                 <tr>
-                    <td>Contract Date:</td>
-                    <td>{{ contract.date_of_contract }}</td>
+                    <td>Date of Agreement:</td>
+                    <td>{{ date_of_agreement }}</td>
                 </tr>
             </tbody>
         </table>
+        <br></br>
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <div id="message-container" class="messages"></div>
+        <div class="private-key-input">
+            <label for="private-key">Private Key:</label>
+            <input type="text" id="private-key" name="private-key" placeholder="Enter your private key without headers & footers." style="width: 80%;">
+        </div>
+        <div class="button-container">
+            <button class ='submit-key-button' id="sign_contract" class="button">Sign & Submit</button>
+        </div>
+        <!-- <a class="pay-now-button" href="/process_payment/{{contract.application_id}}">Pay Now</a> -->
     </div>
-    <a class="pay-now-button" href="/process_payment/{{contract.application_id}}">Pay Now</a>
 </body>
 </html>
+
+<script src="{% static 'node-forge/dist/forge.min.js' %}"></script>
+<script>
+    const messageContainer = document.getElementById('message-container');
+    function sendPostRequest(url, data) {
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken') // Include the CSRF token if needed
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data =>{
+            // if (response.ok) {
+                // alert(data.message);
+                // Redirect to the response url
+                // if(data.success == false){
+                //     messageContainer.innerHTML = 'Invalid Signature. Please Try Again.';
+                //     messageContainer.style.backgroundColor = 'red';
+                //     messageContainer.style.color = '#fff';
+                //     messageContainer.style.textAlign = 'center';
+                //     messageContainer.style.padding = '10px';
+
+                //     setTimeout(function() {
+                //         messageContainer.innerHTML = '';
+                //         messageContainer.style.backgroundColor='white';
+                //     }, 3000);
+                // }
+                var response_url = data.url;
+                window.location.href = response_url;
+            // } else {
+                // Handle errors, if any
+            // }
+        })
+        .catch(error => {
+            // Handle network or other errors
+            console.log("Network Response Error.")
+        });
+    }
+
+    document.getElementById('sign_contract').addEventListener('click', function(event){
+        if(document.getElementById('private-key').value == ''){
+            // alert('Please Enter the private key before.')
+            messageContainer.innerHTML = 'Please Enter the private key before.';
+            messageContainer.style.backgroundColor = 'red';
+            messageContainer.style.color = '#fff';
+            messageContainer.style.textAlign = 'center';
+            messageContainer.style.padding = '10px';
+
+            setTimeout(function() {
+                messageContainer.innerHTML = '';
+                messageContainer.style.backgroundColor='white';
+            }, 3000);
+        }else{
+            // Collect attribute values and create a JSON object
+            const jsonData = {
+                "Application ID": "{{ application_id }}",
+                "Buyer's Username": "{{ buyer_username }}",
+                "Buyer's Name": "{{ buyer_name }}",
+                "Seller's Username": "{{ seller_username }}",
+                "Seller's Name": "{{ seller_name }}",
+                "Property ID": "{{ property_id }}",
+                "Property Address": "{{ property_address }}",
+                "City": "{{ city }}",
+                "State": "{{ state }}",
+                "Pincode": "{{ pincode }}",
+                "Amount (in Rs)": "{{ contract_value }}",
+                "Date of Agreement": "{{ date_of_agreement }}"
+            };
+
+            // Convert JSON object to a string
+            const jsonString = JSON.stringify(jsonData);
+            const base64JsonString = btoa(jsonString);
+            // console.log(jsonString);
+
+            // Calculate a hash of the JSON string (using SHA-256 in this example)
+            const sha256 = forge.md.sha256.create();
+            sha256.update(base64JsonString, 'utf8');
+            const hash = sha256.digest().toHex();
+
+            const privateKey = document.getElementById('private-key').value;
+            const pemPrivateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`;
+
+            // Sign the hash with the private key
+            const privateKeyObj = forge.pki.privateKeyFromPem(pemPrivateKey);
+            const signature = privateKeyObj.sign(sha256);
+
+            // Convert the signature to a base64-encoded string
+            const signatureBase64 = forge.util.encode64(signature);
+
+            // You can now send the signature to the server
+            // console.log("JSON Data: " + jsonString);
+            // console.log("Hash: " + hash);
+            // console.log("Signature: " + signatureBase64);
+
+            // You can send the JSON data and the signature to the server via a POST request here.
+            const url = '/payment_gateway/{{application_id}}';
+            const data = {
+                'contract_payload': base64JsonString,
+                'signature': signatureBase64,
+            };
+
+            sendPostRequest(url, data);
+        }
+    })
+
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>

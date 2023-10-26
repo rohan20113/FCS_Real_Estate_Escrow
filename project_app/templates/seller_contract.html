@@ -184,7 +184,7 @@
                     <td>{{ contract_value }}</td>
                 </tr>
                 <tr>
-                    <td>Date of Agreemenet:</td>
+                    <td>Date of Agreement:</td>
                     <td>{{ date_of_agreement }}</td>
                 </tr>
             </tbody>
@@ -192,10 +192,11 @@
         {% if messages %}
         <ul class="messages">
             {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                <li{% if message.tags %} class="messages"{% endif %}>{{ message }}</li>
             {% endfor %}
         </ul>
         {% endif %}
+        <div id="message-container" class="messages"></div>
         <div class="private-key-input">
             <label for="private-key">Enter Private Key:</label>
             <input type="text" id="private-key" name="private-key" placeholder="Enter your private key without headers & footers." style="width: 80%;">
@@ -210,7 +211,7 @@
 
 <script src="{% static 'node-forge/dist/forge.min.js' %}"></script>
 <script>
-
+    const messageContainer = document.getElementById('message-container');
     function sendPostRequest(url, data) {
         fetch(url, {
             method: 'POST',
@@ -239,7 +240,17 @@
 
     document.getElementById('sign_contract').addEventListener('click', function(event){
         if(document.getElementById('private-key').value == ''){
-            alert('Please Enter the private key before.')
+            // alert('Please Enter the private key before.')
+            messageContainer.innerHTML = 'Please Enter the private key before.';
+            messageContainer.style.backgroundColor = 'red';
+            messageContainer.style.color = '#fff';
+            messageContainer.style.textAlign = 'center';
+            messageContainer.style.padding = '10px';
+
+            setTimeout(function() {
+                messageContainer.innerHTML = '';
+                messageContainer.style.backgroundColor='white';
+            }, 3000);
         }else{
             // Collect attribute values and create a JSON object
             const jsonData = {
@@ -278,9 +289,9 @@
             const signatureBase64 = forge.util.encode64(signature);
 
             // You can now send the signature to the server
-            // console.log("JSON Data: " + jsonString);
-            // console.log("Hash: " + hash);
-            // console.log("Signature: " + signatureBase64);
+            console.log("JSON Data: " + jsonString);
+            console.log("Hash: " + hash);
+            console.log("Signature: " + signatureBase64);
 
             // You can send the JSON data and the signature to the server via a POST request here.
             const url = '/seller_contract/{{application_id}}';
