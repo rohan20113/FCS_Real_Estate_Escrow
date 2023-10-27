@@ -858,3 +858,53 @@ def process_payment(request, id):
 
     messages.info(request, "Transaction SUCCESSFUL")
     return redirect('search_properties_page')
+
+def past_buy_history(request):
+    username = request.session.get('username')
+    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+        return redirect('/')
+    if(username is None):
+        return redirect('/login')
+
+    if request.method == 'GET':
+        contracts = Property_Transfer_Contract.objects.filter(buyer = username)
+        buy_contracts_list = []
+        for c in contracts:
+            # print(c.application_id)
+            print(c)
+            application = PropertyApplications.objects.get(id = c.application_id)
+            print(application.status)
+            if application.status == 'SUCCESS':
+                buy_contracts_list.append(c)
+        # print("HELLO")
+        # properties = Property.objects.values()
+        # for i in range(len(properties)):
+        #     if username == properties[i]["owner"]:
+        #         my_properties_list.append(properties[i])
+        # print("NUMBER_OF_PROPERTIES:",len(my_properties_list))
+        return render(request, 'past_buy_history.html', {'contracts':buy_contracts_list})
+    
+def past_sell_history(request):
+    username = request.session.get('username')
+    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+        return redirect('/')
+    if(username is None):
+        return redirect('/login')
+
+    if request.method == 'GET':
+        contracts = Property_Transfer_Contract.objects.filter(seller = username)
+        sell_contracts_list = []
+        for c in contracts:
+            # print(c.application_id)
+            print(c)
+            application = PropertyApplications.objects.get(id = c.application_id)
+            print(application.status)
+            if application.status == 'SUCCESS':
+                sell_contracts_list.append(c)
+        # print("HELLO")
+        # properties = Property.objects.values()
+        # for i in range(len(properties)):
+        #     if username == properties[i]["owner"]:
+        #         my_properties_list.append(properties[i])
+        # print("NUMBER_OF_PROPERTIES:",len(my_properties_list))
+        return render(request, 'past_sell_history.html', {'contracts':sell_contracts_list})

@@ -1,0 +1,151 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Property Listing</title>
+    <style>
+        html, body {
+            height: 100%;
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 2px solid #3498db;
+            background-color: #fff;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            height: 100%;
+            position: relative; /* Add relative positioning for button placement */
+        }
+
+        .scroll-container {
+            max-height: calc(100% - 120px);
+            overflow-x: auto;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #3498db;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #3498db;
+            color: #fff;
+        }
+
+        /* Style for buttons */
+        .logout-button {
+            position: absolute;
+            top: 35px;
+            right: 20px; /* Position the "Logout" button to the right */
+            background-color: #e74c3c;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .add-property-button {
+            /* align-items: center; */
+            top: 35px;
+            margin-left: 500px;
+            right: 20px; /* Position the "Logout" button to the right */
+            background-color: #7b3ce7;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .dashboard-button {
+            position: absolute;
+            top: 35px;
+            right: 150px; /* Position the "Dashboard" button to the left */
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        /* Style for button hover */
+        .logout-button:hover {
+            background-color: #c0392b;
+        }
+
+        .dashboard-button:hover {
+            background-color: #1e6aae;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        {% csrf_token %}
+        <h2>Past Purchases</h2>
+        <a class="dashboard-button" href="/dashboard">Dashboard</a> <!-- Dashboard button -->
+        <a class="logout-button" href="/logout">Logout</a> <!-- Logout button -->
+        <!-- Display messages below the form -->
+        <div class="message-container">
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        <div class="scroll-container">
+            <table>
+                <thead>
+                    <tr>
+                        <!-- <th>ID</th> -->
+                        <th>Application ID</th>
+                        <th>Property ID</th>
+                        <th>Seller</th>
+                        <th>Contract Date</th>
+                        <th>Purchase Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contract in contracts %}
+                    <tr>
+                        <td>{{ contract.application_id }}</td>
+                        <td>{{ contract.property_id }}</td>
+                        <td>{{ contract.seller }}</td>
+                        <td>{{ contract.date_of_agreement }}</td>
+                        <td>{{ contract.price }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

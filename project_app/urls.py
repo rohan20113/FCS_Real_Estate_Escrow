@@ -26,4 +26,6 @@ urlpatterns = [
     path("reject_property_application/<int:id>", views.reject_property_application),
     path("payment_gateway/<int:id>", views.payment_gateway, name = 'payment_gateway_page'),
     path("process_payment/<int:id>", views.process_payment),
+    path("past_buy_history", views.past_buy_history, name = "past_buy_history_page"),
+    path("past_sell_history", views.past_sell_history, name = "past_sell_history_page"),
 ]
