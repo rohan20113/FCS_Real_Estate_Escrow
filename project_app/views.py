@@ -1110,13 +1110,39 @@ def past_buy_history(request):
     if request.method == 'GET':
         contracts = Property_Transfer_Contract.objects.filter(buyer = username)
         buy_contracts_list = []
-        for c in contracts:
-            # print(c.application_id)
+        for i in range(len(contracts)):
+            # print(c.application_id)   
             # print(c)
-            application = PropertyApplications.objects.get(id = c.application_id)
+            application = PropertyApplications.objects.get(id = contracts[i].application_id)
             # print(application.status)
             if application.status == 'SUCCESS':
-                buy_contracts_list.append(c)
+                temp = {
+                    'application_id':contracts[i].application_id,
+                    'type':'BUY',
+                    'property_id': contracts[i].property_id,
+                    'seller': contracts[i].seller,
+                    'date_of_agreement': contracts[i].date_of_agreement,
+                    'price': contracts[i].price
+                }
+                # print(type(c))
+                buy_contracts_list.append(temp)
+
+        contracts = RentalsContract.objects.filter(username = username, party_type = 'lessee')
+        # print(rental_contracts)
+        for i in range(len(contracts)):
+            application = PropertyApplications.objects.get(id = contracts[i].application_id)
+            # print(application.status)
+            if application.status == 'SUCCESS':
+                temp = {
+                    'application_id':contracts[i].application_id,
+                    'type':'RENT',
+                    'property_id': contracts[i].property_id,
+                    'seller': 'portal',
+                    'date_of_agreement': contracts[i].date_of_agreement,
+                    'price': contracts[i].total_rent
+                }
+                # print(type(c))
+                buy_contracts_list.append(temp)
         # print("HELLO")
         # properties = Property.objects.values()
         # for i in range(len(properties)):
@@ -1133,15 +1159,42 @@ def past_sell_history(request):
         return redirect('/login')
 
     if request.method == 'GET':
-        contracts = Property_Transfer_Contract.objects.filter(seller = username)
         sell_contracts_list = []
-        for c in contracts:
+        contracts = Property_Transfer_Contract.objects.filter(seller = username)
+        for i in range(len(contracts)):
             # print(c.application_id)
             # print(c)
-            application = PropertyApplications.objects.get(id = c.application_id)
+            application = PropertyApplications.objects.get(id = contracts[i].application_id)
             # print(application.status)
             if application.status == 'SUCCESS':
-                sell_contracts_list.append(c)
+                temp = {
+                    'application_id':contracts[i].application_id,
+                    'type':'SELL',
+                    'property_id': contracts[i].property_id,
+                    'buyer': contracts[i].buyer,
+                    'date_of_agreement': contracts[i].date_of_agreement,
+                    'price': contracts[i].price
+                }
+                # print(type(c))
+                sell_contracts_list.append(temp)
+                # sell_contracts_list.append(c)
+        contracts = RentalsContract.objects.filter(username = username, party_type = 'lessor')
+        for i in range(len(contracts)):
+            # print(c.application_id)
+            # print(c)
+            application = PropertyApplications.objects.get(id = contracts[i].application_id)
+            # print(application.status)
+            if application.status == 'SUCCESS':
+                temp = {
+                    'application_id':contracts[i].application_id,
+                    'type':'RENT',
+                    'property_id': contracts[i].property_id,
+                    'buyer': 'portal',
+                    'date_of_agreement': contracts[i].date_of_agreement,
+                    'price': contracts[i].total_rent
+                }
+                # print(type(c))
+                sell_contracts_list.append(temp)
         # print("HELLO")
         # properties = Property.objects.values()
         # for i in range(len(properties)):

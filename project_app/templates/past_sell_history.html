@@ -126,18 +126,20 @@
                 <thead>
                     <tr>
                         <!-- <th>ID</th> -->
-                        <th>Application ID</th>
+                        <!-- <th>Application ID</th> -->
                         <th>Property ID</th>
+                        <th>Contract Type</th>
                         <th>Buyer</th>
                         <th>Contract Date</th>
-                        <th>Purchase Value</th>
+                        <th>Contract Value</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for contract in contracts %}
                     <tr>
-                        <td>{{ contract.application_id }}</td>
+                        <!-- <td>{{ contract.application_id }}</td> -->
                         <td>{{ contract.property_id }}</td>
+                        <td>{{ contract.type }}</td>
                         <td>{{ contract.buyer }}</td>
                         <td>{{ contract.date_of_agreement }}</td>
                         <td>{{ contract.price }}</td>
