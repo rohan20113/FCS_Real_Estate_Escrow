@@ -377,7 +377,7 @@ def search_properties(request):
         properties = list(Property.objects.values())
         # print(properties)
         for i in range(len(properties)):
-            if(properties[i]['owner'] !=username and properties[i]['type'] != 'DELISTED'):
+            if(properties[i]['owner'] !=username and properties[i]['type'] in ['SELL', 'RENT']):
                 my_properties_list.append(properties[i])
         # print("LENGTH:", len(my_properties_list))
         # print("SELECTED LIST:\n", (my_properties_list))
@@ -652,13 +652,14 @@ def lessor_contract(request, id):
         lessor_obj = AppUser.objects.get(username = current_application.property_owner)
         # Create a contract object and save the string. 
         signed_token = base64JsonString + "." + base64Signature
-        contract_object = RentalsContract.objects.create(application_id = id, property_id = current_application.property_id,
+        rentals_object = RentalsContract.objects.create(application_id = id, property_id = current_application.property_id,
                                                         property_address_line_1 = property.address_line_1, property_address_line_2 = property.address_line_2,
                                                         property_state = property.state, property_city = property.city, property_pincode = property.pincode,
                                                         username = current_application.property_owner, first_name = lessor_obj.first_name, second_name = lessor_obj.second_name, 
-                                                        party_type='lessor' ,price = property.price, date_of_agreement = date.today(), token = signed_token, duration = property.duration,
+                                                        party_type='lessor' ,date_of_agreement = date.today(), token = signed_token, duration = property.duration,
                                                         rent_per_month = property.price, total_rent = contract_value)
-        contract_object.save()
+        rentals_object.save()
+        # print(rentals_object)
         messages.success(request, 'Successfully approved the application')
         response_data = {
             'success': True,
@@ -789,6 +790,120 @@ def seller_contract(request, id):
         # messages.info(request, 'Sign the above contract.')
         return render(request, 'seller_contract.html', resp_data)
 
+def rentals_payment_gateway(request, id):
+    username = request.session.get('username')
+    if(request.session.get('email_kyc') is None):
+            return redirect('/')
+    if(username is None):
+        return redirect('/login')
+    
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        base64JsonString = data.get('contract_payload', None)
+        # jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
+        base64Signature = data.get('signature', None)
+        # signature = base64.b64decode(base64Signature)
+        signature = base64.b64decode(data.get('signature', None))
+        # print('JSON STRING',jsonString)
+        # print('SIGNATURE',signature)
+
+        # Create hash of the same payload and then verify the signatures. 
+        # If correct, then accept the application, create a contract and save the data in the table.
+        public_key_pem = AppUser.objects.get(username = username).public_key
+        public_key = RSA.import_key(public_key_pem)
+        # print(public_key)
+        # Create a hash of the original file contents
+        try:
+            h = SHA256.new(base64JsonString.encode('utf-8'))
+            verifier = pkcs1_15.new(public_key)
+            verifier.verify(h, signature)
+        except Exception as e:
+            messages.info(request, 'Signature Error!\n Please Try Again.')
+            response_data = {
+                'success': False,
+                'url': f'/rentals_payment_gateway/{id}'
+            }
+            return JsonResponse(response_data)
+        
+        # Signature verification successful. 
+        lessee_obj = AppUser.objects.get(username = username)
+        current_application = PropertyApplications.objects.get(id = id)
+        property = Property.objects.get(id = current_application.property_id)
+        # Create a contract object and save the string. 
+        signed_token = base64JsonString + "." + base64Signature
+        contract_value = property.duration * property.price
+        rentals_object = RentalsContract.objects.create(application_id = id, property_id = current_application.property_id,
+                                                        property_address_line_1 = property.address_line_1, property_address_line_2 = property.address_line_2,
+                                                        property_state = property.state, property_city = property.city, property_pincode = property.pincode,
+                                                        username = current_application.interested_user, first_name = lessee_obj.first_name, second_name = lessee_obj.second_name, 
+                                                        party_type='lessee' ,date_of_agreement = date.today(), token = signed_token, duration = property.duration,
+                                                        rent_per_month = property.price, total_rent = contract_value)
+        rentals_object.save()
+
+        # Changing the owner.
+        property_obj = Property.objects.get(id = rentals_object.property_id)
+        property_obj.type = 'ON LEASE'
+        property_obj.save()
+
+        # Updating the application status.
+        current_application_obj = PropertyApplications.objects.get(id = id)
+        current_application_obj.status = 'SUCCESS'
+        current_application_obj.save()
+
+        messages.success(request, 'Transaction Successful!')
+        response_data = {
+            'success': True,
+            'url': '/search_properties/'
+        }
+        return JsonResponse(response_data)
+
+    else:
+        current_application = PropertyApplications.objects.get(id = id)
+        # Find the current_user_balance
+        current_user = AppUser.objects.filter(username = username)
+        current_user_balance = current_user[0].balance
+        # print("BALANCE: ",current_user_balance)
+
+        # Find the amount required for the property. (RENTAL -> 12months contract)
+        required_amount = None
+        current_property_id = current_application.property_id
+        property_object = Property.objects.get(id = current_property_id)
+        # property_type = property_object.type
+        required_amount = property_object.duration * property_object.price
+        if(required_amount > current_user_balance):
+            messages.info(request, "INSUFFICIENT BALANCE!")
+            return redirect('search_properties_page')
+        post_balance = current_user_balance - required_amount
+        
+        # Fetch the current application object.
+        # property = Property.objects.get(id = current_application.property_id)
+
+        property_address = property_object.address_line_1 + " " +  property_object.address_line_2
+        property_state = property_object.state
+        property_city = property_object.city
+        property_pincode = property_object.pincode
+        rent_per_month = property_object.price
+        rental_duration = property_object.duration
+        contract_value = rent_per_month * rental_duration
+        # print("hi")
+        date_of_agreement = RentalsContract.objects.get(application_id = id).date_of_agreement
+        # print("hi")
+
+        buyer = AppUser.objects.get(username = username)
+        buyer_name = buyer.first_name + " " + buyer.second_name
+
+        # Sending contract details to be displayed.
+            # Sending contract details to be displayed.
+        resp_data =  {'application_id': id, 'buyer_username': buyer.username, 'buyer_name': buyer_name,
+                    'property_id': current_application.property_id,  'property_address': property_address, 'duration': rental_duration,
+                    'city': property_city, 'state': property_state, 'pincode': property_pincode, 'price_pm': rent_per_month, 
+                    'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'party_type': 'Lessee',
+                    'post_balance': post_balance
+                    }
+        # messages.info(request, 'Sign the above contract.')
+        return render(request, 'rentals_payment_gateway.html', resp_data)
+         
+
 def payment_gateway(request, id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
@@ -865,13 +980,38 @@ def payment_gateway(request, id):
             if(required_amount > current_user_balance):
                 messages.info(request, "INSUFFICIENT BALANCE!")
                 return redirect('search_properties_page')
-            #  payment_contract_details = {'price': required_amount, 'balance':current_user_balance, 'property_id':current_property_id,
-            #                             'application_id':current_application.id, 'date_of_contract': date.today(), 
-            #                             'post_balance': current_user_balance-required_amount}
-            # if(property_type.lower == 'rent'):
-            #     payment_contract_details['duration'] = property_object.duration 
-            # Need another flow.
-            pass
+            post_balance = current_user_balance - required_amount
+            
+            # Fetch the current application object.
+            # property = Property.objects.get(id = current_application.property_id)
+
+            property_address = property_object.address_line_1 + " " +  property_object.address_line_2
+            property_state = property_object.state
+            property_city = property_object.city
+            property_pincode = property_object.pincode
+            rent_per_month = property_object.price
+            rental_duration = property_object.duration
+            contract_value = rent_per_month * rental_duration
+            # print("hi")
+            date_of_agreement = RentalsContract.objects.get(application_id = id)
+            # print("hi")
+
+            buyer = AppUser.objects.get(username = username)
+            buyer_name = buyer.first_name + " " + buyer.second_name
+
+            seller = AppUser.objects.get(username = PropertyApplications.objects.get(id = id).property_owner)
+            # seller = AppUser.objects.get(username = Property_Transfer_Contract.objects.get(application_id = id).seller)
+            seller_name = seller.first_name +  " " + seller.second_name        
+
+            # Sending contract details to be displayed.
+             # Sending contract details to be displayed.
+            resp_data =  {'application_id': id, 'seller_username': current_application.property_owner, 'seller_name': seller_name,
+                        'property_id': current_application.property_id,  'property_address': property_address, 'duration': rental_duration,
+                        'city': property_city, 'state': property_state, 'pincode': property_pincode, 'price_pm': rent_per_month, 
+                        'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'party_type': 'Lessee'
+                        }
+            # messages.info(request, 'Sign the above contract.')
+            return render(request, 'payment_gateway.html', resp_data)
         else:
             required_amount = property_object.price
             # print("REQUIRED_AMOUNT: ", required_amount, "\nBALANCE AVAILABLE: ", current_user_balance)

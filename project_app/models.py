@@ -65,7 +65,7 @@ class RentalsContract(models.Model):
     second_name = models.CharField(max_length=30, default= None)
     username = models.CharField(max_length=30,  null= False, blank=False, default = False)
     # lessee or lessor
-    party_type = models.CharField(max_length=1, null = False, blank = False, default = False)
+    party_type = models.CharField(max_length=6, null = False, blank = False, default = False)
     property_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = False) 
     property_address_line_1 = models.CharField(max_length=30,  null= False, blank=False, default = None)
     property_address_line_2 = models.CharField(max_length=30,  null= False, blank=True, default = '')
@@ -76,9 +76,11 @@ class RentalsContract(models.Model):
     rent_per_month = models.DecimalField(decimal_places=0, max_digits=7, null = False, blank = False, default = False)
     total_rent = models.DecimalField(decimal_places=0, max_digits=11, null = False, blank = False, default = False)
     date_of_agreement = models.DateField(null = False, blank = False, default= False)
+    token = models.CharField(max_length=2000, null= False, blank=False, default = None)
+
 
     def __str__(self):
-        return f"{self.application_id} {self.property_id} {self.party_username} {self.party_type} {self.duration} {self.rent_per_month} {self.total_rent} {self.date_of_agreement}"
+        return f"{self.application_id} {self.property_id} {self.username} {self.first_name} {self.second_name} {self.party_type} {self.duration} {self.rent_per_month} {self.total_rent} {self.date_of_agreement}"
     
 class PropertyApplications(models.Model):
     property_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = False)
