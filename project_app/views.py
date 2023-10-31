@@ -499,7 +499,7 @@ def apply_property_deal(request, id):
                 return redirect('search_properties_page')
             
     # Now, we've to add this pending request for the given property.
-    application = PropertyApplications.objects.create(property_id = id, interested_user = username)
+    application = PropertyApplications.objects.create(property_id = id, interested_user = username, property_owner = property_owner_username)
     application.save()
     messages.info(request, 'Application Sent Successfully!')
     return redirect('search_properties_page')
@@ -644,14 +644,14 @@ def seller_contract(request, id):
             application.save()
         
         buyer_obj = AppUser.objects.get(username = current_application.interested_user)
-        seller_obj = AppUser.objects.get(username = username)
+        seller_obj = AppUser.objects.get(username = current_application.property_owner)
         # Create a contract object and save the string. 
         signed_token = base64JsonString + "." + base64Signature
         contract_object = Property_Transfer_Contract.objects.create(application_id = id, property_id = current_application.property_id,
                                                                     property_address_line_1 = property.address_line_1, property_address_line_2 = property.address_line_2,
                                                                     property_state = property.state, property_city = property.city, property_pincode = property.pincode,
                                                                     buyer = current_application.interested_user, first_name_buyer = buyer_obj.first_name, second_name_buyer = buyer_obj.second_name,
-                                                                    seller = username, first_name_seller = seller_obj.first_name, second_name_seller = seller_obj.second_name, 
+                                                                    seller = current_application.property_owner, first_name_seller = seller_obj.first_name, second_name_seller = seller_obj.second_name, 
                                                                     price = property.price, date_of_agreement = date.today(), token = signed_token)
         contract_object.save()
         messages.success(request, 'Successfully approved the application')
@@ -676,12 +676,12 @@ def seller_contract(request, id):
         buyer = AppUser.objects.get(username = current_application.interested_user)
         buyer_name = buyer.first_name + " " + buyer.second_name
 
-        seller = AppUser.objects.get(username = username)
+        seller = AppUser.objects.get(username = current_application.property_owner)
         seller_name = seller.first_name +  " " + seller.second_name        
 
         # Sending contract details to be displayed.
         resp_data =  {'application_id': id, 'buyer_username':current_application.interested_user,
-                      'buyer_name': buyer_name, 'seller_username': username, 'seller_name': seller_name,
+                      'buyer_name': buyer_name, 'seller_username': current_application.property_owner, 'seller_name': seller_name,
                       'property_id': current_application.property_id,  'property_address': property_address,
                       'city': property_city, 'state': property_state, 'pincode': property_pincode, 
                       'contract_value': contract_value, 'date_of_agreement': date_of_agreement
@@ -794,7 +794,8 @@ def payment_gateway(request, id):
             buyer = AppUser.objects.get(username = username)
             buyer_name = buyer.first_name + " " + buyer.second_name
 
-            seller = AppUser.objects.get(username = Property_Transfer_Contract.objects.get(application_id = id).seller)
+            seller = AppUser.objects.get(username = PropertyApplications.objects.get(application_id = id).property_owner)
+            # seller = AppUser.objects.get(username = Property_Transfer_Contract.objects.get(application_id = id).seller)
             seller_name = seller.first_name +  " " + seller.second_name        
 
             # Sending contract details to be displayed.
@@ -835,7 +836,7 @@ def process_payment(request, id):
     current_user.balance = current_user_balance - required_amount
     current_user.save()
 
-    seller = AppUser.objects.filter(username = property_object.owner)[0]
+    seller = AppUser.objects.filter(username = current_application.property_owner)[0]
     seller.balance = seller.balance + required_amount
     seller.save()
 
@@ -871,9 +872,9 @@ def past_buy_history(request):
         buy_contracts_list = []
         for c in contracts:
             # print(c.application_id)
-            print(c)
+            # print(c)
             application = PropertyApplications.objects.get(id = c.application_id)
-            print(application.status)
+            # print(application.status)
             if application.status == 'SUCCESS':
                 buy_contracts_list.append(c)
         # print("HELLO")
@@ -896,9 +897,9 @@ def past_sell_history(request):
         sell_contracts_list = []
         for c in contracts:
             # print(c.application_id)
-            print(c)
+            # print(c)
             application = PropertyApplications.objects.get(id = c.application_id)
-            print(application.status)
+            # print(application.status)
             if application.status == 'SUCCESS':
                 sell_contracts_list.append(c)
         # print("HELLO")

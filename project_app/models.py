@@ -75,5 +75,6 @@ class RentalsContract(models.Model):
     
 class PropertyApplications(models.Model):
     property_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = False) 
+    property_owner = models.CharField(max_length=30,  null= False, blank=False, default = False)
     interested_user = models.CharField(max_length=30,  null= False, blank=False, default = False)
     status = models.CharField(max_length=15, null = False, blank = False, default = "PENDING")
