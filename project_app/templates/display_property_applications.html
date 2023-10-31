@@ -140,6 +140,7 @@
                 <thead>
                     <tr>
                         <th>Party User-Name</th>
+                        <th>Application Type</th>
                         <th>Accept Application</th>
                         <th>Reject Application</th>
                     </tr>
@@ -149,6 +150,7 @@
                     <tr>
                         <!-- <td>{{ property.id }}</td> -->
                         <td>{{ application.interested_user }}</td>
+                        <td>{{ application.application_type }}</td>
                         <td>
                             <a href="/accept_property_application/{{application.id}}">
                                 <img src ="{% static 'accept_icon.jpg' %}" alt="Accept_Application">

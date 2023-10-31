@@ -59,22 +59,34 @@ class Property_Transfer_Contract(models.Model):
         return f"{self.application_id} {self.property_id} {self.buyer} {self.seller} {self.price} {self.date_of_agreement} "
 
 class RentalsContract(models.Model):
-    contract_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = False)
-    party_user_name = models.CharField(max_length=30,  null= False, blank=False, default = False)
+    id = models.AutoField(primary_key=True)
+    application_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = False)
     first_name = models.CharField(max_length=30, null= False, blank=False, default = None)
     second_name = models.CharField(max_length=30, default= None)
+    username = models.CharField(max_length=30,  null= False, blank=False, default = False)
+    # lessee or lessor
     party_type = models.CharField(max_length=1, null = False, blank = False, default = False)
-    # 0-> owner & 1-> other_party
     property_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = False) 
+    property_address_line_1 = models.CharField(max_length=30,  null= False, blank=False, default = None)
+    property_address_line_2 = models.CharField(max_length=30,  null= False, blank=True, default = '')
+    property_state = models.CharField(max_length=30,  null= False, blank=False, default = None)
+    property_city = models.CharField(max_length=30,  null= False, blank=False, default = None)
+    property_pincode = models.CharField(max_length=6,  null= False, blank=False, default = None)
     duration = models.DecimalField(decimal_places=0, max_digits=3, null = False, blank = False, default = False)
-    price = models.DecimalField(decimal_places=0, max_digits=7, null = False, blank = False, default = False)
-    date_of_contract = models.DateField(null = False, blank = False, default= False)
+    rent_per_month = models.DecimalField(decimal_places=0, max_digits=7, null = False, blank = False, default = False)
+    total_rent = models.DecimalField(decimal_places=0, max_digits=11, null = False, blank = False, default = False)
+    date_of_agreement = models.DateField(null = False, blank = False, default= False)
 
     def __str__(self):
-        return f"{self.contract_id} {self.property_id} {self.party_user_name} {self.party_type} {self.duration} {self.price} {self.date_of_contract}"
+        return f"{self.application_id} {self.property_id} {self.party_username} {self.party_type} {self.duration} {self.rent_per_month} {self.total_rent} {self.date_of_agreement}"
     
 class PropertyApplications(models.Model):
-    property_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = False) 
+    property_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = False)
+    # TYPE -> BUY / RENT
+    application_type = models.CharField(max_length=4, null = False, blank = False, default = False) 
     property_owner = models.CharField(max_length=30,  null= False, blank=False, default = False)
     interested_user = models.CharField(max_length=30,  null= False, blank=False, default = False)
     status = models.CharField(max_length=15, null = False, blank = False, default = "PENDING")
+
+    def __str__(self):
+        return f"{self.property_id} {self.application_type} {self.property_owner} {self.interested_user} {self.status}"

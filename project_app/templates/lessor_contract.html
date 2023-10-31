@@ -1,0 +1,326 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lessor Side Contract</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 2px solid #3498db;
+            background-color: #fff;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #3498db;
+            padding: 10px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .navbar h2 {
+            color: #fff;
+            margin: 0;
+        }
+
+        .logout-button {
+            background-color: #e74c3c;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .logout-button:hover {
+            background-color: #c0392b;
+        }
+
+        .button-container {
+            margin-top: 20px;
+            text-align: center; /* Center-align the button */
+        }
+
+        .button-container a.button, .button-container button.submit-key-button {
+            background-color: #3498db;
+            color: #fff;
+            padding: 14px 28px; /* Increase padding for a bigger button */
+            font-size: 18px; /* Increase font size */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+
+        .upload-file-button {
+            background-color: #50db34;
+            color: #fff;
+            margin-left: 850px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: #c0392b;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #3498db;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #3498db;
+            color: #fff;
+        }
+
+        .messages {
+            background-color: #f1ffcc;
+            color: #111111;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .private-key-input {
+            text-align: center; /* Center-align the input field */
+        }
+
+        #private-key {
+            padding: 10px; /* Increase padding for a bigger input field */
+            font-size: 16px; /* Increase font size */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        {% csrf_token %}
+        <div class="navbar"> 
+            <h2>Lessor Side Contract</h2>
+            <a class="logout-button" href="/logout">Logout</a>
+        </div>
+
+        <div class="button-container">
+            <a class="button" href="/dashboard">Dashboard</a>
+            <a class="button" href="/my_properties">My Properties</a>
+            <!-- <a class="button" href="/add_property">Add Property</a> -->
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Attribute</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Application ID:</td>
+                    <td>{{ application_id }}</td>
+                </tr>
+                <tr>
+                    <td>Full Name :</td>
+                    <td>{{ seller_name }}</td>
+                </tr>
+                <tr>
+                    <td>Username:</td>
+                    <td>{{ seller_username }}</td>
+                </tr>
+                <tr>
+                    <td>User Type:</td>
+                    <td>{{ party_type }}</td>
+                </tr>
+                <tr>
+                    <td>Property ID:</td>
+                    <td>{{ property_id }}</td>
+                </tr>
+                <tr>
+                    <td>Property Address:</td>
+                    <td>{{ property_address }}</td>
+                </tr>
+                <tr>
+                    <td>City:</td>
+                    <td>{{ city }}</td>
+                </tr>
+                <tr>
+                    <td>State:</td>
+                    <td>{{ state }}</td>
+                </tr>
+                <tr>
+                    <td>Pincode:</td>
+                    <td>{{ pincode }}</td>
+                </tr>
+                <tr>
+                    <td>Rent Duration (in Months):</td>
+                    <td>{{ duration }}</td>
+                </tr>
+                <tr>
+                    <td>Rent per Month (in Rs):</td>
+                    <td>{{ price_pm }}</td>
+                </tr>
+                <tr>
+                    <td>Contract Amount (in Rs):</td>
+                    <td>{{ contract_value }}</td>
+                </tr>
+                <tr>
+                    <td>Date of Agreement:</td>
+                    <td>{{ date_of_agreement }}</td>
+                </tr>
+            </tbody>
+        </table>
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="messages"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <div id="message-container" class="messages"></div>
+        <div class="private-key-input">
+            <label for="private-key">Enter Private Key:</label>
+            <input type="text" id="private-key" name="private-key" placeholder="Enter your private key without headers & footers." style="width: 80%;">
+        </div>
+        
+        <div class="button-container">
+            <button class ='submit-key-button' id="sign_contract" class="button">Sign & Submit</button>
+        </div>
+    </div>
+</body>
+</html>
+
+<script src="{% static 'node-forge/dist/forge.min.js' %}"></script>
+<script>
+    const messageContainer = document.getElementById('message-container');
+    function sendPostRequest(url, data) {
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken') // Include the CSRF token if needed
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data =>{
+            // if (response.ok) {
+                // alert(data.message);
+                // Redirect to the response url
+                var response_url = data.url;
+                window.location.href = response_url;
+            // } else {
+                // Handle errors, if any
+            // }
+        })
+        .catch(error => {
+            // Handle network or other errors
+            console.log("Network Response Error.")
+        });
+    }
+
+    document.getElementById('sign_contract').addEventListener('click', function(event){
+        if(document.getElementById('private-key').value == ''){
+            // alert('Please Enter the private key before.')
+            messageContainer.innerHTML = 'Please Enter the private key first & then submit/sign.';
+            messageContainer.style.backgroundColor = 'red';
+            messageContainer.style.color = '#fff';
+            messageContainer.style.textAlign = 'center';
+            messageContainer.style.padding = '10px';
+
+            setTimeout(function() {
+                messageContainer.innerHTML = '';
+                messageContainer.style.backgroundColor='white';
+            }, 3000);
+        }else{
+            // Collect attribute values and create a JSON object
+            const jsonData = {
+                "Application ID": "{{ application_id }}",
+                "Full Name": "{{ seller_name }}",
+                "Username": "{{ seller_username }}",
+                "Party's Name": "{{ party_type }}",
+                "Property ID": "{{ property_id }}",
+                "Property Address": "{{ property_address }}",
+                "City": "{{ city }}",
+                "State": "{{ state }}",
+                "Pincode": "{{ pincode }}",
+                "Rent Duration (in Months)": "{{ duration }}",
+                "Amount (in Rs)": "{{ price_pm }}",
+                "Amount (in Rs)": "{{ contract_value }}",
+                "Date of Agreement": "{{ date_of_agreement }}"
+            };
+
+            // Convert JSON object to a string
+            const jsonString = JSON.stringify(jsonData);
+            const base64JsonString = btoa(jsonString);
+            // console.log(jsonString);
+
+            // Calculate a hash of the JSON string (using SHA-256 in this example)
+            const sha256 = forge.md.sha256.create();
+            sha256.update(base64JsonString, 'utf8');
+            // const hash = sha256.digest().toHex();
+
+            const privateKey = document.getElementById('private-key').value;
+            const pemPrivateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`;
+
+            // Sign the hash with the private key
+            const privateKeyObj = forge.pki.privateKeyFromPem(pemPrivateKey);
+            const signature = privateKeyObj.sign(sha256);
+
+            // Convert the signature to a base64-encoded string
+            const signatureBase64 = forge.util.encode64(signature);
+
+            // You can now send the signature to the server
+            // console.log("JSON Data: " + jsonString);
+            // console.log("Hash: " + hash);
+            // console.log("Signature: " + signatureBase64);
+
+            // You can send the JSON data and the signature to the server via a POST request here.
+            const url = '/seller_contract/{{application_id}}';
+            const data = {
+                'contract_payload': base64JsonString,
+                'signature': signatureBase64,
+            };
+
+            sendPostRequest(url, data);
+        }
+    })
+
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>

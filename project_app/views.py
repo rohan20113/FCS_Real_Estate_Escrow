@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, reverse
-from .models import AppUser, Property, PropertyApplications, Property_Transfer_Contract
+from .models import AppUser, Property, PropertyApplications, Property_Transfer_Contract, RentalsContract
 from django.contrib import messages
 from django.http import JsonResponse
 import hashlib, json
@@ -485,6 +485,7 @@ def apply_property_deal(request, id):
         return redirect('/login')
     property_selected = Property.objects.get(id=id)
     property_owner_username = property_selected.owner
+    contract_type = property_selected.type
 
     # Check if no existing row/copy is there:
     applications = list(PropertyApplications.objects.values())
@@ -499,7 +500,7 @@ def apply_property_deal(request, id):
                 return redirect('search_properties_page')
             
     # Now, we've to add this pending request for the given property.
-    application = PropertyApplications.objects.create(property_id = id, interested_user = username, property_owner = property_owner_username)
+    application = PropertyApplications.objects.create(property_id = id, interested_user = username, property_owner = property_owner_username, application_type = contract_type)
     application.save()
     messages.info(request, 'Application Sent Successfully!')
     return redirect('search_properties_page')
@@ -573,7 +574,7 @@ def accept_property_application(request, id):
         return redirect('/login')
     
     # fetching the object
-    # current_application = PropertyApplications.objects.get(id = id)
+    current_application = PropertyApplications.objects.get(id = id)
     # current_property = current_application.property_id
 
     # # Changing the current request's status
@@ -591,7 +592,106 @@ def accept_property_application(request, id):
     # Create another contract and pass it to the next api. 
 
     # messages.info(request, "Application Accepted!\n Please Wait for Payment.")
-    return redirect('seller_contract_page', id = id)
+    if current_application.application_type == 'RENT':
+        return redirect('lessor_contract_page', id = id)
+    else:
+        return redirect('seller_contract_page', id = id)
+
+def lessor_contract(request, id):
+    username = request.session.get('username')
+    if(request.session.get('email_kyc') is None):
+            return redirect('/')
+    if(username is None):
+        return redirect('/login')
+    
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        base64JsonString = data.get('contract_payload', None)
+        # jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
+        base64Signature = data.get('signature', None)
+        # signature = base64.b64decode(base64Signature)
+        signature = base64.b64decode(data.get('signature', None))
+        # print('JSON STRING',jsonString)
+        # print('SIGNATURE',signature)
+
+        # Create hash of the same payload and then verify the signatures. 
+        # If correct, then accept the application, create a contract and save the data in the table.
+        public_key_pem = AppUser.objects.get(username = username).public_key
+        public_key = RSA.import_key(public_key_pem)
+        # print(public_key)
+        # Create a hash of the original file contents
+        try:
+            h = SHA256.new(base64JsonString.encode('utf-8'))
+            verifier = pkcs1_15.new(public_key)
+            verifier.verify(h, signature)
+        except Exception as e:
+            messages.error(request, 'Signature Error!\n Please Try Again.')
+            response_data = {
+                'success': False,
+                'url': f'/lessor_contract/{id}'
+            }
+            return JsonResponse(response_data)
+        
+        # Approve the application & reject others.
+        # fetching the object
+        current_application = PropertyApplications.objects.get(id = id)
+        current_property_id = current_application.property_id
+        property = Property.objects.get(id = current_property_id)
+        # Changing the current request's status
+        current_application.status = 'ACCEPTED'
+        current_application.save()
+        
+        # Rejecting all other pending requests.
+        applications = PropertyApplications.objects.filter(property_id=current_property_id, status='PENDING')
+        for application in applications:
+            application.status = 'REJECTED'
+            application.save()
+        
+        contract_value = property.duration * property.price
+        # lessee_obj = AppUser.objects.get(username = current_application.interested_user)
+        lessor_obj = AppUser.objects.get(username = current_application.property_owner)
+        # Create a contract object and save the string. 
+        signed_token = base64JsonString + "." + base64Signature
+        contract_object = RentalsContract.objects.create(application_id = id, property_id = current_application.property_id,
+                                                        property_address_line_1 = property.address_line_1, property_address_line_2 = property.address_line_2,
+                                                        property_state = property.state, property_city = property.city, property_pincode = property.pincode,
+                                                        username = current_application.property_owner, first_name = lessor_obj.first_name, second_name = lessor_obj.second_name, 
+                                                        party_type='lessor' ,price = property.price, date_of_agreement = date.today(), token = signed_token, duration = property.duration,
+                                                        rent_per_month = property.price, total_rent = contract_value)
+        contract_object.save()
+        messages.success(request, 'Successfully approved the application')
+        response_data = {
+            'success': True,
+            'url': '/my_properties/'
+        }
+        return JsonResponse(response_data)
+        
+    else:
+        # Fetch the current application object.
+        current_application = PropertyApplications.objects.get(id = id)
+        property = Property.objects.get(id = current_application.property_id)
+
+        property_address = property.address_line_1 + " " +  property.address_line_2
+        property_state = property.state
+        property_city = property.city
+        property_pincode = property.pincode
+        contract_value = property.price * property.duration
+        date_of_agreement = date.today()
+
+        # buyer = AppUser.objects.get(username = current_application.interested_user)
+        # buyer_name = buyer.first_name + " " + buyer.second_name
+
+        seller = AppUser.objects.get(username = current_application.property_owner)
+        seller_name = seller.first_name +  " " + seller.second_name        
+
+        # Sending contract details to be displayed.
+        resp_data =  {'application_id': id, 'seller_username': current_application.property_owner, 'seller_name': seller_name,
+                      'property_id': current_application.property_id,  'property_address': property_address, 'duration': property.duration,
+                      'city': property_city, 'state': property_state, 'pincode': property_pincode, 'price_pm': property.price, 
+                      'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'party_type': 'Lessor'
+                      }
+        # messages.info(request, 'Sign the above contract.')
+        return render(request, 'lessor_contract.html', resp_data)
 
 def seller_contract(request, id):
     username = request.session.get('username')
@@ -684,7 +784,7 @@ def seller_contract(request, id):
                       'buyer_name': buyer_name, 'seller_username': current_application.property_owner, 'seller_name': seller_name,
                       'property_id': current_application.property_id,  'property_address': property_address,
                       'city': property_city, 'state': property_state, 'pincode': property_pincode, 
-                      'contract_value': contract_value, 'date_of_agreement': date_of_agreement
+                      'contract_value': contract_value, 'date_of_agreement': date_of_agreement 
                       }
         # messages.info(request, 'Sign the above contract.')
         return render(request, 'seller_contract.html', resp_data)
