@@ -14,7 +14,7 @@ from Crypto.Hash import SHA256
 # Create your views here.
 # @csrf_exempt
 def login_user(request):
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
         return redirect('/')
     if request.method == 'POST':
         username = request.POST['username']
@@ -61,7 +61,7 @@ def login_user(request):
     
 # @csrf_exempt
 def register_user(request):
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
         return redirect('/')
     if request.method == 'POST':
         input_first_name = request.POST['firstname']
@@ -99,7 +99,7 @@ def register_user(request):
         return render(request, 'signup.html')
 
 def user_document_verification(request, id):
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
         return redirect('/')
     
     # Check if already document verified: 
@@ -198,7 +198,7 @@ def ekyc(request):
                 if(response_data.get('status') == 'success'):
                     messages.info(request, 'eKYC successful')
                     request.session['email_kyc'] = email_input
-                    request.session['password_kyc'] = password_input  
+                    # request.session['password_kyc'] = password_input  
                     return redirect('/login')
                 elif response_data.get('status') == 'error':
                     messages.info(request, response_data.get('message'))
@@ -224,13 +224,13 @@ def dashboard_admin(request):
     if request.method == "POST":
         username = request.session.get('username')
         # print(username)
-        if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+        if(request.session.get('email_kyc') is None):
             return redirect('/')
         if(username is None):
             return redirect('/login')    
     else:
         username = request.session.get('username')
-        if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+        if(request.session.get('email_kyc') is None):
             return redirect('/')
         if(username is None):
             return redirect('/login') 
@@ -246,7 +246,7 @@ def dashboard_admin(request):
 def dashboard_user(request):
     if request.method == "POST":
         username = request.session.get('username')
-        if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+        if(request.session.get('email_kyc') is None):
             return redirect('/')
         if(username is None):
             return redirect('/login')
@@ -255,7 +255,7 @@ def dashboard_user(request):
         pass
     else:
         username = request.session.get('username')
-        if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+        if(request.session.get('email_kyc') is None):
             return redirect('/')
         if(username is None):
             return redirect('/login')
@@ -270,7 +270,7 @@ def dashboard_user(request):
         
 def dashboard_user_list(request):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
             return redirect('/')
     if(username is None):
         return redirect('/login')
@@ -284,13 +284,13 @@ def dashboard_user_list(request):
 
 def add_property(request):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
             return redirect('/')
     if(username is None):
         return redirect('/login')
     # print(username)
     if request.method == "POST":
-        if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+        if(request.session.get('email_kyc') is None):
             return redirect('/')
         if(username is None):
             return redirect('/login')
@@ -336,7 +336,7 @@ def add_property(request):
             property_to_be_added.save()
             return redirect('dashboard_page')   
     else:
-        if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+        if(request.session.get('email_kyc') is None):
             return redirect('/')
         if(username is None):
             return redirect('/login')
@@ -344,7 +344,7 @@ def add_property(request):
     
 def my_properties(request):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
             return redirect('/')
     if(username is None):
         return redirect('/login')
@@ -362,14 +362,14 @@ def my_properties(request):
 def search_properties(request):
     if(request.method == 'POST'):
         username = request.session.get('username')
-        if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+        if(request.session.get('email_kyc') is None):
             return redirect('/')
         if(username is None):
             return redirect('/login')
     else:
         username = request.session.get('username')
         # print(type(username), username)
-        if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+        if(request.session.get('email_kyc') is None):
             return redirect('/')
         if(username is None):
             return redirect('/login')
@@ -391,7 +391,7 @@ def search_properties(request):
 
 def edit_property(request, id = id):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
             return redirect('/')
     if(username is None):
         return redirect('/login')
@@ -400,7 +400,7 @@ def edit_property(request, id = id):
 
 def update_property(request, id):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
             return redirect('/')
     if(username is None):
         return redirect('/login')
@@ -465,7 +465,7 @@ def update_property(request, id):
 
 def delete_property(request, id):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
             return redirect('/')
     if(username is None):
         return redirect('/login')
@@ -479,12 +479,12 @@ def logout_user(request):
 
 def apply_property_deal(request, id):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
             return redirect('/')
     if(username is None):
         return redirect('/login')
     property_selected = Property.objects.get(id=id)
-    property_owner_username = Property.owner
+    property_owner_username = property_selected.owner
 
     # Check if no existing row/copy is there:
     applications = list(PropertyApplications.objects.values())
@@ -506,7 +506,7 @@ def apply_property_deal(request, id):
 
 def display_property_applications(request, id):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
             return redirect('/')
     if(username is None):
         return redirect('/login')
@@ -539,7 +539,7 @@ def display_property_applications(request, id):
 
 def reject_property_application(request, id):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
             return redirect('/')
     if(username is None):
         return redirect('/login')
@@ -567,7 +567,7 @@ def reject_property_application(request, id):
 
 def accept_property_application(request, id):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
             return redirect('/')
     if(username is None):
         return redirect('/login')
@@ -595,7 +595,7 @@ def accept_property_application(request, id):
 
 def seller_contract(request, id):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
             return redirect('/')
     if(username is None):
         return redirect('/login')
@@ -691,7 +691,7 @@ def seller_contract(request, id):
 
 def payment_gateway(request, id):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
             return redirect('/')
     if(username is None):
         return redirect('/login')
@@ -794,13 +794,13 @@ def payment_gateway(request, id):
             buyer = AppUser.objects.get(username = username)
             buyer_name = buyer.first_name + " " + buyer.second_name
 
-            seller = AppUser.objects.get(username = PropertyApplications.objects.get(application_id = id).property_owner)
+            seller = AppUser.objects.get(username = PropertyApplications.objects.get(id = id).property_owner)
             # seller = AppUser.objects.get(username = Property_Transfer_Contract.objects.get(application_id = id).seller)
             seller_name = seller.first_name +  " " + seller.second_name        
 
             # Sending contract details to be displayed.
             resp_data =  {'application_id': id, 'buyer_username':current_application.interested_user,
-                        'buyer_name': buyer_name, 'seller_username': username, 'seller_name': seller_name,
+                        'buyer_name': buyer_name, 'seller_username': current_application.property_owner, 'seller_name': seller_name,
                         'property_id': current_application.property_id,  'property_address': property_address,
                         'city': property_city, 'state': property_state, 'pincode': property_pincode, 
                         'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'post_balance': post_balance
@@ -810,7 +810,7 @@ def payment_gateway(request, id):
 
 def process_payment(request, id):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
         return redirect('/')
     if(username is None):
         return redirect('/login')
@@ -862,7 +862,7 @@ def process_payment(request, id):
 
 def past_buy_history(request):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
         return redirect('/')
     if(username is None):
         return redirect('/login')
@@ -887,7 +887,7 @@ def past_buy_history(request):
     
 def past_sell_history(request):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None or request.session.get('password_kyc') is None):
+    if(request.session.get('email_kyc') is None):
         return redirect('/')
     if(username is None):
         return redirect('/login')
