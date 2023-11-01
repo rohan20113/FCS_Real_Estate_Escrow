@@ -884,12 +884,17 @@ def rentals_payment_gateway(request, id):
         property_obj.type = 'ON LEASE'
         property_obj.save()
 
+        # Rejecting all other existing pending applications.
+        applications = PropertyApplications.objects.filter(property_id= current_application.property_id, status='PENDING')
+        for application in applications:
+            application.status = 'REJECTED'
+            application.save()
+
         # Updating the application status.
         current_application_obj = PropertyApplications.objects.get(id = id)
         current_application_obj.status = 'SUCCESS'
         current_application_obj.save()
 
-        # Rejecting all other existing applications.
 
         messages.success(request, 'Transaction Successful!')
         response_data = {
@@ -927,7 +932,7 @@ def rentals_payment_gateway(request, id):
         rental_duration = property_object.duration
         contract_value = rent_per_month * rental_duration
         # print("hi")
-        print(current_application)
+        # print(current_application)
         date_of_agreement = RentalsContract.objects.get(application_id = id).date_of_agreement
         # print("hi")
 
@@ -998,14 +1003,16 @@ def payment_gateway(request, id):
         property_obj.type = 'DELISTED'
         property_obj.save()
 
-        # Updating the application status.
+        # Rejecting all existing applications of this property.
+        applications = PropertyApplications.objects.filter(property_id= current_application.property_id, status='PENDING')
+        for application in applications:
+            application.status = 'REJECTED'
+            application.save()
+        
+        # Updating the current application status.
         current_application_obj = PropertyApplications.objects.get(id = id)
         current_application_obj.status = 'SUCCESS'
-        current_application_obj.save()
-
-        # Rejecting all existing applications of this property.
-        prop_applications = PropertyApplications.objects.filter(property_id = property_obj.id)
-        
+        current_application_obj.save()        
 
         messages.success(request, 'Transaction Successful!')
         response_data = {
