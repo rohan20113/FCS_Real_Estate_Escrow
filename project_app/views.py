@@ -100,8 +100,12 @@ def register_user(request):
 
 def user_document_verification(request, id):
     if(request.session.get('email_kyc') is None):
-        return redirect('/')
+        return redirect('logout_page')
     
+    current_user = AppUser.objects.get(id = id)
+    if(current_user.email != request.session.get('email_kyc')):
+        return redirect('logout_page')
+        # return redirect('/')
     # Check if already document verified: 
     usr = AppUser.objects.get(id=id)
     if(usr.dv):
@@ -225,13 +229,13 @@ def dashboard_admin(request):
         username = request.session.get('username')
         # print(username)
         if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
         if(username is None):
             return redirect('/login')    
     else:
         username = request.session.get('username')
         if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
         if(username is None):
             return redirect('/login') 
         current_user = []
@@ -247,7 +251,7 @@ def dashboard_user(request):
     if request.method == "POST":
         username = request.session.get('username')
         if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
         if(username is None):
             return redirect('/login')
         # if(username is None):
@@ -256,7 +260,7 @@ def dashboard_user(request):
     else:
         username = request.session.get('username')
         if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
         if(username is None):
             return redirect('/login')
         # print(username)
@@ -271,7 +275,7 @@ def dashboard_user(request):
 def dashboard_user_list(request):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
     if(username is None):
         return redirect('/login')
     users = list(AppUser.objects.values())
@@ -285,13 +289,13 @@ def dashboard_user_list(request):
 def add_property(request):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
     if(username is None):
         return redirect('/login')
     # print(username)
     if request.method == "POST":
         if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
         if(username is None):
             return redirect('/login')
         input_addr_l1 = request.POST['address-line-1']
@@ -337,7 +341,7 @@ def add_property(request):
             return redirect('dashboard_page')   
     else:
         if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
         if(username is None):
             return redirect('/login')
         return render(request, 'add_property.html')
@@ -345,7 +349,7 @@ def add_property(request):
 def my_properties(request):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
     if(username is None):
         return redirect('/login')
     if(request.method == 'POST'):
@@ -363,14 +367,14 @@ def search_properties(request):
     if(request.method == 'POST'):
         username = request.session.get('username')
         if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
         if(username is None):
             return redirect('/login')
     else:
         username = request.session.get('username')
         # print(type(username), username)
         if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
         if(username is None):
             return redirect('/login')
         my_properties_list = []
@@ -392,19 +396,23 @@ def search_properties(request):
 def edit_property(request, id = id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
     if(username is None):
         return redirect('/login')
     property = Property.objects.get(id=id)
+    if(property.owner != username):
+        return redirect('logout_page')
     return render(request, 'edit_property.html', {'property':property})
 
 def update_property(request, id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
     if(username is None):
         return redirect('/login')
     property = Property.objects.get(id=id)
+    if(property.owner != username):
+        return redirect('logout_page')
     if request.method =="POST":
         property_instance = get_object_or_404(Property, pk = id)
         # input_addr_l1 = request.POST['address-line-1']
@@ -466,10 +474,12 @@ def update_property(request, id):
 def delete_property(request, id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
     if(username is None):
         return redirect('/login')
     property = Property.objects.get(id=id)
+    if(property.owner != username):
+        return redirect('logout_page')
     property.delete()
     return redirect('my_properties_page')
 
@@ -480,10 +490,14 @@ def logout_user(request):
 def apply_property_deal(request, id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
     if(username is None):
         return redirect('/login')
     property_selected = Property.objects.get(id=id)
+    if property_selected.type not in ['SELL', 'RENT']:
+        return redirect('logout_page')
+    if property_selected.owner == username:
+        return redirect('logout_page')
     property_owner_username = property_selected.owner
     contract_type = property_selected.type
 
@@ -508,9 +522,12 @@ def apply_property_deal(request, id):
 def display_property_applications(request, id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
     if(username is None):
         return redirect('/login')
+    property = Property.objects.get(id = id)
+    if property.owner != username:
+        return redirect('logout_page')
 
     # accepted_applications = PropertyApplications.objects.filter(property_id=id, status='ACCEPTED')
     accepted_applications = []
@@ -541,12 +558,14 @@ def display_property_applications(request, id):
 def reject_property_application(request, id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
     if(username is None):
         return redirect('/login')
-    
     # fetching the object
     current_application = PropertyApplications.objects.get(id = id)
+    property = Property.objects.get(id = current_application.property_id)
+    if(property.owner != username):
+        return redirect('logout_page')
     current_property = current_application.property_id
     # Changing the request's status
     current_application.status = 'REJECTED'
@@ -569,12 +588,17 @@ def reject_property_application(request, id):
 def accept_property_application(request, id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
     if(username is None):
         return redirect('/login')
-    
+    # property = Property.objects.get(id = id)
+    # if property.owner != username:
+    #     return redirect('logout_page')
     # fetching the object
     current_application = PropertyApplications.objects.get(id = id)
+    property = Property.objects.get(id = current_application.property_id)
+    if(property.owner != username):
+        return redirect('logout_page')
     # current_property = current_application.property_id
 
     # # Changing the current request's status
@@ -600,9 +624,14 @@ def accept_property_application(request, id):
 def lessor_contract(request, id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
     if(username is None):
         return redirect('/login')
+    
+    current_application = PropertyApplications.objects.get(id = id)
+    property = Property.objects.get(id = current_application.property_id)
+    if(property.owner != username):
+        return redirect('logout_page')
     
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -697,9 +726,14 @@ def lessor_contract(request, id):
 def seller_contract(request, id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
     if(username is None):
         return redirect('/login')
+    
+    current_application = PropertyApplications.objects.get(id = id)
+    property = Property.objects.get(id = current_application.property_id)
+    if(property.owner != username):
+        return redirect('logout_page')
     
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -793,9 +827,14 @@ def seller_contract(request, id):
 def rentals_payment_gateway(request, id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
     if(username is None):
         return redirect('/login')
+    
+    current_application = PropertyApplications.objects.get(id = id)
+    property = Property.objects.get(id = current_application.property_id)
+    if(property.owner == username or current_application.status != 'ACCEPTED' or current_application.interested_user != username):
+        return redirect('logout_page')
     
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -850,6 +889,8 @@ def rentals_payment_gateway(request, id):
         current_application_obj.status = 'SUCCESS'
         current_application_obj.save()
 
+        # Rejecting all other existing applications.
+
         messages.success(request, 'Transaction Successful!')
         response_data = {
             'success': True,
@@ -886,6 +927,7 @@ def rentals_payment_gateway(request, id):
         rental_duration = property_object.duration
         contract_value = rent_per_month * rental_duration
         # print("hi")
+        print(current_application)
         date_of_agreement = RentalsContract.objects.get(application_id = id).date_of_agreement
         # print("hi")
 
@@ -907,9 +949,14 @@ def rentals_payment_gateway(request, id):
 def payment_gateway(request, id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-            return redirect('/')
+            return redirect('logout_page')
     if(username is None):
         return redirect('/login')
+    
+    current_application = PropertyApplications.objects.get(id = id)
+    property = Property.objects.get(id = current_application.property_id)
+    if(property.owner == username or current_application.status != 'ACCEPTED' or current_application.interested_user != username):
+        return redirect('logout_page')
     
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -955,6 +1002,10 @@ def payment_gateway(request, id):
         current_application_obj = PropertyApplications.objects.get(id = id)
         current_application_obj.status = 'SUCCESS'
         current_application_obj.save()
+
+        # Rejecting all existing applications of this property.
+        prop_applications = PropertyApplications.objects.filter(property_id = property_obj.id)
+        
 
         messages.success(request, 'Transaction Successful!')
         response_data = {
@@ -1055,6 +1106,10 @@ def process_payment(request, id):
     if(username is None):
         return redirect('/login')
     
+    current_application = PropertyApplications.objects.get(id = id)
+    property = Property.objects.get(id = current_application.property_id)
+    if(property.owner == username or current_application.status != 'ACCEPTED' or current_application.interested_user != username):
+        return redirect('logout_page')
     # 1. Balance Reduction & Addition (Completed here)
         # Find the current_user_balance
     current_user = AppUser.objects.filter(username = username)[0]
