@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, reverse
 from .models import AppUser, Property, PropertyApplications, Property_Transfer_Contract, RentalsContract
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib import messages
 from django.http import JsonResponse
 import hashlib, json
@@ -1336,3 +1337,45 @@ def view_contract(request, id):
             'date_of_agreement': transferContract.date_of_agreement,
             'token': transferContract.token,
         })
+
+def verify_contract(request):
+    username = request.session.get('username')
+    if(request.session.get('email_kyc') is None):
+        return redirect('logout_page')
+    
+    if request.method == 'POST':
+        application_id = request.POST['application_id']
+        token = request.POST['token']
+        
+        # Fetching the corresponding application: 
+        try:
+            current_application = PropertyApplications.objects.get(id = application_id)
+            # Fetching the contract object: 
+            if current_application.application_type == 'RENT':
+                # Fetch the contract
+                contract = RentalsContract.objects.filter(application_id = application_id)
+                for i in contract:
+                    if token == i.token:
+                        # Valid contract.
+                        messages.success(request, "Token is VALID")
+                        return redirect('verify_contract_page')
+                # Invalid Contract/Token.
+                messages.error(request, "Token is INVALID")
+                return redirect('verify_contract_page')
+            else:
+                # SELL TYPE APPLICATION
+                contract = Property_Transfer_Contract.objects.get(application_id = application_id)
+                if contract.token == token:
+                    messages.success(request, "Token is VALID")
+                    return redirect('verify_contract_page')
+                # Invalid Contract/Token.
+                messages.error(request, "Token is INVALID")
+                return redirect('verify_contract_page')
+        except ObjectDoesNotExist:
+            # No such application exists:
+            messages.error(request, "No such application exists.")
+            return render(request, 'verify_contract.html')
+    else:
+        # GET request.
+        # messages.info(request, 'Fill the desired fields and hit verify.')
+        return render(request, 'verify_contract.html')

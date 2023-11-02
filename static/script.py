@@ -1,6 +1,6 @@
 from PIL import Image
 
-def shrink_image(input_path, output_path, max_size=(50 , 50), quality=100):
+def shrink_image(input_path, output_path, max_size=(40 , 40), quality=100):
     try:
         img = Image.open(input_path)
         img.thumbnail(max_size)
