@@ -1,0 +1,212 @@
+{%load static%}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Past Contract</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 2px solid #3498db;
+            background-color: #fff;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #3498db;
+            padding: 10px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .navbar h2 {
+            color: #fff;
+            margin: 0;
+        }
+
+        .logout-button {
+            background-color: #e74c3c;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .logout-button:hover {
+            background-color: #c0392b;
+        }
+
+        .button-container {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        .button-container a.button {
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #3498db;
+        }
+
+        th, td {
+            max-width: 70px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #3498db;
+            color: #fff;
+        }
+
+        td.token{
+            max-width: 100px;
+            overflow: scroll;
+        }
+
+        .button-container {
+            margin-top: 20px;
+            text-align: center; /* Center-align the button */
+        }
+
+        .button-container a.button, .button-container button.submit-key-button {
+            background-color: #3498db;
+            color: #fff;
+            padding: 14px 28px; /* Increase padding for a bigger button */
+            font-size: 18px; /* Increase font size */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+        .messages {
+            background-color: #ffffff;
+            color: #111111;
+            padding: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- {% csrf_token %} -->
+        <div class="navbar">
+            <h2>Rentals Contract</h2>
+            <a class="logout-button" href="/logout">Logout</a>
+        </div>
+
+        <div class="button-container">
+            <a class="button" href="/past_buy_history">Past Purchase History</a>
+            <a class="button" href="/past_sell_history">Past Sell History</a>
+            <a class="button" href="/dashboard">Dashboard</a>
+            <!-- <a class="button" href="/add_property">Add Property</a> -->
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Attribute</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Application ID:</td>
+                    <td>{{ current_application_id }}</td>
+                </tr>
+                <tr>
+                    <td>Full Name :</td>
+                    <td>{{ party_name }}</td>
+                </tr>
+                <tr>
+                    <td>Username:</td>
+                    <td>{{ party_username }}</td>
+                </tr>
+                <tr>
+                    <td>User Type:</td>
+                    <td>{{ party_type }}</td>
+                </tr>
+                <tr>
+                    <td>Property ID:</td>
+                    <td>{{ property_id }}</td>
+                </tr>
+                <tr>
+                    <td>Property Address:</td>
+                    <td>{{ property_address }}</td>
+                </tr>
+                <tr>
+                    <td>City:</td>
+                    <td>{{ city }}</td>
+                </tr>
+                <tr>
+                    <td>State:</td>
+                    <td>{{ state }}</td>
+                </tr>
+                <tr>
+                    <td>Pincode:</td>
+                    <td>{{ pincode }}</td>
+                </tr>
+                <tr>
+                    <td>Rent Duration (in Months):</td>
+                    <td>{{ duration }}</td>
+                </tr>
+                <tr>
+                    <td>Rent per Month (in ₹):</td>
+                    <td>{{ price_pm }}</td>
+                </tr>
+                <tr>
+                    <td>Contract Amount (in ₹):</td>
+                    <td>{{ contract_value }}</td>
+                </tr>
+                <tr>
+                    <td>Date of Agreement:</td>
+                    <td>{{ date_of_agreement }}</td>
+                </tr>
+                <tr>
+                    <td>Token:</td>
+                    <td class="token">{{ token }}</td>
+                </tr>
+            </tbody>
+        </table>
+        <br></br>
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <div id="message-container" class="messages"></div>
+    </div>
+</body>
+</html>

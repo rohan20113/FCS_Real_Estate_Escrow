@@ -15,7 +15,7 @@ from Crypto.Hash import SHA256
 # @csrf_exempt
 def login_user(request):
     if(request.session.get('email_kyc') is None):
-        return redirect('/')
+        return redirect('logout_page')
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
@@ -62,7 +62,7 @@ def login_user(request):
 # @csrf_exempt
 def register_user(request):
     if(request.session.get('email_kyc') is None):
-        return redirect('/')
+        return redirect('logout_page')
     if request.method == 'POST':
         input_first_name = request.POST['firstname']
         input_last_name = request.POST['lastname']
@@ -1109,7 +1109,7 @@ def payment_gateway(request, id):
 def process_payment(request, id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-        return redirect('/')
+        return redirect('logout_page')
     if(username is None):
         return redirect('/login')
     
@@ -1165,7 +1165,7 @@ def process_payment(request, id):
 def past_buy_history(request):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-        return redirect('/')
+        return redirect('logout_page')
     if(username is None):
         return redirect('/login')
 
@@ -1216,7 +1216,7 @@ def past_buy_history(request):
 def past_sell_history(request):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
-        return redirect('/')
+        return redirect('logout_page')
     if(username is None):
         return redirect('/login')
 
@@ -1264,3 +1264,75 @@ def past_sell_history(request):
         #         my_properties_list.append(properties[i])
         # print("NUMBER_OF_PROPERTIES:",len(my_properties_list))
         return render(request, 'past_sell_history.html', {'contracts':sell_contracts_list})
+    
+def view_contract(request, id):
+    username = request.session.get('username')
+    if(request.session.get('email_kyc') is None):
+        return redirect('logout_page')
+    
+    current_application = PropertyApplications.objects.get(id = id)
+    # Unauthorized access.
+    if(username != current_application.interested_user and username != current_application.property_owner):
+        return redirect('logout_page')
+    
+    if(current_application.application_type == 'RENT'):
+        # Rental Contract
+        if username == current_application.interested_user:
+            rentalsContract = RentalsContract.objects.get(application_id = id, party_type = 'lessee')
+            # Lessee
+            return render(request, 'rentals_contract.html', {
+                'current_application_id': id,
+                'party_name': rentalsContract.first_name + " " + rentalsContract.second_name,
+                'party_username': rentalsContract.username,
+                'party_type': rentalsContract.party_type,
+                'property_id': rentalsContract.property_id,
+                'property_address': rentalsContract.property_address_line_1 + " " + rentalsContract.property_address_line_2,
+                'city': rentalsContract.property_city,
+                'state': rentalsContract.property_state,
+                'pincode': rentalsContract.property_pincode,
+                'duration': rentalsContract.duration,
+                'price_pm': rentalsContract.rent_per_month,
+                'contract_value': rentalsContract.total_rent,
+                'date_of_agreement': rentalsContract.date_of_agreement,
+                'token': rentalsContract.token,
+            })
+        else:
+            # Lessor
+            rentalsContract = RentalsContract.objects.get(application_id = id, party_type = 'lessor')
+            return render(request, 'rentals_contract.html', {
+                'current_application_id': id,
+                'party_name': rentalsContract.first_name + " " + rentalsContract.second_name,
+                'party_username': rentalsContract.username,
+                'party_type': rentalsContract.party_type,
+                'property_id': rentalsContract.property_id,
+                'property_address': rentalsContract.property_address_line_1 + " " + rentalsContract.property_address_line_2,
+                'city': rentalsContract.property_city,
+                'state': rentalsContract.property_state,
+                'pincode': rentalsContract.property_pincode,
+                'duration': rentalsContract.duration,
+                'price_pm': rentalsContract.rent_per_month,
+                'contract_value': rentalsContract.total_rent,
+                'date_of_agreement': rentalsContract.date_of_agreement,
+                'token': rentalsContract.token,
+            })
+    else:
+        # Buy/Sell contract -> Single Contract exists & hence, we don't need to check what to show.
+        transferContract = Property_Transfer_Contract.objects.get(application_id = id)
+        # print(transferContract.application_id)
+        # print(id)
+        # print(current_application.id)
+        return render(request, 'property_transfer_contract.html', {
+            'current_application_id': id,
+            'buyer_username': transferContract.buyer,
+            'buyer_name': transferContract.first_name_buyer + " " + transferContract.second_name_buyer,
+            'seller_username': transferContract.seller,
+            'seller_name': transferContract.first_name_seller + " " + transferContract.second_name_seller,
+            'property_id': transferContract.property_id,
+            'property_address': transferContract.property_address_line_1 + " " + transferContract.property_address_line_2,
+            'city': transferContract.property_city,
+            'state': transferContract.property_state,
+            'pincode': transferContract.property_pincode,
+            'contract_value': transferContract.price,
+            'date_of_agreement': transferContract.date_of_agreement,
+            'token': transferContract.token,
+        })

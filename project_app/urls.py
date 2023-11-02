@@ -30,4 +30,5 @@ urlpatterns = [
     path("process_payment/<int:id>", views.process_payment),
     path("past_buy_history", views.past_buy_history, name = "past_buy_history_page"),
     path("past_sell_history", views.past_sell_history, name = "past_sell_history_page"),
+    path("view_contract/<int:id>", views.view_contract, name = "view_contract_page"),
 ]
