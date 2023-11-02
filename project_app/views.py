@@ -315,7 +315,7 @@ def add_property(request):
         # input_availability_till = request.POST['availability-till']
         # print(type(input_availability_till))
         # print((input_availability_till), (input_availability_till).reverse())
-        print(input_contract_type, input_duration)
+        # print(input_contract_type, input_duration)
         if(input_contract_type == 'RENT' and (input_duration == None or len(input_duration) == 0)):
             messages.info(request, 'PLEASE FILL DURATION OF RENT')
             return redirect('add_property_page')
@@ -359,7 +359,7 @@ def my_properties(request):
         my_properties_list = []
         properties = Property.objects.values()
         for i in range(len(properties)):
-            if username == properties[i]["owner"]:
+            if username == properties[i]["owner"] and properties[i]['type'] != 'DELETED':
                 my_properties_list.append(properties[i])
         # print("NUMBER_OF_PROPERTIES:",len(my_properties_list))
         return render(request, 'my_properties.html', {'properties':my_properties_list})
@@ -382,6 +382,7 @@ def search_properties(request):
         properties = list(Property.objects.values())
         # print(properties)
         for i in range(len(properties)):
+            # Exlcuding all properties of type: DELETED, DELISTED, ON_LEASE
             if(properties[i]['owner'] !=username and properties[i]['type'] in ['SELL', 'RENT']):
                 my_properties_list.append(properties[i])
         # print("LENGTH:", len(my_properties_list))
@@ -403,6 +404,9 @@ def edit_property(request, id = id):
     property = Property.objects.get(id=id)
     if(property.owner != username):
         return redirect('logout_page')
+    if(property.type == 'DELETED'):
+        messages.info(request, "THIS PROPERTY WAS DELETED.")
+        return redirect('my_properties_page')
     return render(request, 'edit_property.html', {'property':property})
 
 def update_property(request, id):
@@ -414,6 +418,9 @@ def update_property(request, id):
     property = Property.objects.get(id=id)
     if(property.owner != username):
         return redirect('logout_page')
+    if(property.type == 'DELETED'):
+        messages.info(request, "THIS PROPERTY WAS DELETED.")
+        return redirect('my_properties_page')
     if request.method =="POST":
         property_instance = get_object_or_404(Property, pk = id)
         # input_addr_l1 = request.POST['address-line-1']
@@ -481,7 +488,10 @@ def delete_property(request, id):
     property = Property.objects.get(id=id)
     if(property.owner != username):
         return redirect('logout_page')
-    property.delete()
+    # property.delete()
+    # Mark the property_status as DELETED. (May be used in future in contracts/applications processing)
+    property.type = 'DELETED'
+    property.save()
     return redirect('my_properties_page')
 
 def logout_user(request):
