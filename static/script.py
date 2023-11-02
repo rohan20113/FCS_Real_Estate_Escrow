@@ -1,6 +1,6 @@
 from PIL import Image
 
-def shrink_image(input_path, output_path, max_size=(120, 120), quality=85):
+def shrink_image(input_path, output_path, max_size=(60, 60), quality=100):
     try:
         img = Image.open(input_path)
         img.thumbnail(max_size)
@@ -10,8 +10,8 @@ def shrink_image(input_path, output_path, max_size=(120, 120), quality=85):
         return False
 
 if __name__ == "__main__":
-    input_path = "report_user.jpg"  
-    output_path = "report_user.jpg"  
+    input_path = "view_contract.png"  
+    output_path = "view_contract.png"  
     if shrink_image(input_path, output_path):
         print("SUCCESS")
     else:

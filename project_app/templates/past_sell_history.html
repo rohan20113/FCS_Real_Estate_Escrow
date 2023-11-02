@@ -42,7 +42,7 @@
 
         th, td {
             padding: 15px;
-            text-align: left;
+            text-align: center;
         }
 
         th {
@@ -131,7 +131,8 @@
                         <th>Contract Type</th>
                         <th>Buyer</th>
                         <th>Contract Date</th>
-                        <th>Contract Value</th>
+                        <th>Contract Value (in ₹)</th>
+                        <th>View Contract</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -142,7 +143,12 @@
                         <td>{{ contract.type }}</td>
                         <td>{{ contract.buyer }}</td>
                         <td>{{ contract.date_of_agreement }}</td>
-                        <td>{{ contract.price }}</td>
+                        <td>{{ contract.price }} </td>
+                        <td>
+                            <a href="" style="align-items: center;display: flex; justify-content: center;">
+                                <img src ="{% static 'view_contract.png' %}" alt="View Contract">
+                            </a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
