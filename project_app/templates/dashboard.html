@@ -38,6 +38,19 @@
             background-color: #e74c3c;
             color: #fff;
             border: none;
+            margin-right: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .edit-profile-button {
+            background-color: #0845a7;
+            color: #fff;
+            border: none;
+            margin-left: 370px;
             padding: 10px 20px;
             font-size: 16px;
             border-radius: 5px;
@@ -85,13 +98,37 @@
             background-color: #3498db;
             color: #fff;
         }
+
+        .messages-success {
+            background-color: #c8f7c5; 
+            color: #009900; 
+            text-align: center;
+            margin-left: 150px;
+            max-width: 200px;
+        }
+
+        .messages-error {
+            background-color: #fcc9c9; 
+            color: #ff0000; 
+            text-align: center;
+            margin-left: 150px;
+            max-width: 200px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         {% csrf_token %}
+        <div >
+            {% if messages %}
+                {% for message in messages %}
+                    <li{% if "success" in message.tags %} class="messages-success"{% elif "error" in message.tags %} class="messages-error"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            {% endif %}
+        </div>
         <div class="navbar">
             <h2>User Dashboard</h2>
+            <a class="edit-profile-button" href="/edit_profile">Edit Profile</a>
             <a class="logout-button" href="/logout">Logout</a>
         </div>
 
@@ -103,6 +140,7 @@
             <a class="button" href="/my_properties">My Properties</a>
             <!-- <a class="button" href="/add_property">Add Property</a> -->
         </div>
+
 
         <table>
             <thead>

@@ -47,7 +47,9 @@ def login_user(request):
                 if(dv_flag is False):
                     messages.info(request, "Document Verification Pending")
                     return redirect('user_document_verification_page', id=user_id)
-                return redirect('dashboard_page')
+                else:
+                    messages.success(request, 'Successfully Logged in.')
+                    return redirect('dashboard_page')
         else:
             if user_flag == False:
                 messages.info(request, 'Invalid Username')
@@ -1281,6 +1283,9 @@ def view_contract(request, id):
     if(request.session.get('email_kyc') is None):
         return redirect('logout_page')
     
+    if(username is None):
+        return redirect('login_page')
+    
     current_application = PropertyApplications.objects.get(id = id)
     # Unauthorized access.
     if(username != current_application.interested_user and username != current_application.property_owner):
@@ -1353,6 +1358,9 @@ def verify_contract(request):
     if(request.session.get('email_kyc') is None):
         return redirect('logout_page')
     
+    if(username is None):
+        return redirect('login_page')
+    
     if request.method == 'POST':
         application_id = request.POST['application_id']
         token = request.POST['token']
@@ -1360,6 +1368,11 @@ def verify_contract(request):
         # Fetching the corresponding application: 
         try:
             current_application = PropertyApplications.objects.get(id = application_id)
+            # Checking if current application is having SUCCESS or not.
+            if(current_application.status != 'SUCCESS'):
+                messages.error(request, "APPLICATION PENDING/REJECTED")
+                return redirect('verify_contract_page')
+
             # Fetching the contract object: 
             if current_application.application_type == 'RENT':
                 # Fetch the contract
@@ -1389,3 +1402,26 @@ def verify_contract(request):
         # GET request.
         # messages.info(request, 'Fill the desired fields and hit verify.')
         return render(request, 'verify_contract.html')
+    
+def edit_profile(request):
+    username = request.session.get('username')
+    
+    if(request.session.get('email_kyc') is None):
+        return redirect('logout_page')
+    
+    if(username is None):
+        return redirect('login_page')
+    
+    if request.method == 'POST':
+        contact = request.POST['contact']
+        balance = request.POST['balance']
+
+        current_user = AppUser.objects.get(username = username)
+        current_user.balance = balance
+        current_user.contact = contact
+        current_user.save()
+        messages.success(request, 'SAVED PROFILE SUCCESSFULLY')
+        return redirect('dashboard_page')
+    else:
+        # GET request.
+        return render(request, 'edit_profile.html')
