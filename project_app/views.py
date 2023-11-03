@@ -47,7 +47,7 @@ def login_user(request):
                 return redirect('admin_dashboard_page')
             else:
                 if(dv_flag is False):
-                    messages.info(request, "Document Verification Pending")
+                    # messages.info(request, "Document Verification Pending")
                     return redirect('user_document_verification_page', id=user_id)
                 else:
                     messages.success(request, 'Successfully Logged in.')
@@ -94,7 +94,7 @@ def register_user(request):
                 # Obtaining the user's id.
                 user_id = user.id
                 # print("ID:", user_id)
-                return redirect('user_document_verification_page', id = user_id)
+                return redirect('user_mail_verification_page', id = user_id)
         # Passwords unmatched.
         else:
             messages.error(request, 'Passwords UNMATCHED')
@@ -103,6 +103,41 @@ def register_user(request):
     else:
         return render(request, 'signup.html')
 
+def user_mail_verification(request, id):
+    if(request.session.get('email_kyc') is None):
+        return redirect('logout_page')
+
+    current_user = AppUser.objects.get(id = id)
+    if(current_user.dv):
+        if request.session.get('username') is not None:
+            return redirect('dashboard_page')
+        else:
+            return redirect('login_page')
+    
+    if (request.session.get('otp_verification') == id):
+        return redirect('user_document_verification_page', id = id)
+    
+    if request.method == 'POST':
+        otp = request.POST['otp']
+        otp_object = OTP.objects.get(user = AppUser.objects.get(id = id).username)
+        if otp_object.valid == False:
+            messages.error(request, 'OTP already used before in some old transaction.')
+            return redirect('user_mail_verification_page', id =id)
+        if otp_object.expiry_time < timezone.now():
+            messages.error(request, 'OTP expired. Please check your mail again.')
+            return redirect('user_mail_verification_page', id =id)
+        if otp != otp_object.otp:
+            messages.error(request, 'OTP did not match.')
+            return redirect('user_mail_verification_page', id =id)
+        request.session['otp_verification'] = id
+        # OTP matched. 
+        messages.success(request, 'OTP Verification Successful.')
+        return redirect('user_document_verification_page', id= id)
+    elif request.method == 'GET':
+        generateOtpEmail(AppUser.objects.get(id = id).username)
+        messages.info(request, f'OTP has been sent to {current_user.email}.')
+        return render(request, 'user_mail_verification.html')
+
 def user_document_verification(request, id):
     if(request.session.get('email_kyc') is None):
         return redirect('logout_page')
@@ -110,11 +145,19 @@ def user_document_verification(request, id):
     current_user = AppUser.objects.get(id = id)
     if(current_user.email != request.session.get('email_kyc')):
         return redirect('logout_page')
-        # return redirect('/')
+    
+    if request.session.get('otp_verification') != id:
+        request.session['otp_verification'] = None
+        messages.error(request, 'User Verification needs to be performed first.')
+        return redirect('user_mail_verification_page', id = id)
+
     # Check if already document verified: 
-    usr = AppUser.objects.get(id=id)
-    if(usr.dv):
-        return redirect('dashboard_page')
+    if(current_user.dv):
+        if request.session.get('username') is not None:
+            return redirect('dashboard_page')
+        else:
+            return redirect('login_page')
+    
     if request.method == 'POST':
         data = json.loads(request.body)
         public_key_pem = data.get('publicKey', None)
@@ -159,6 +202,7 @@ def user_document_verification(request, id):
                 'success': True,
                 'url': '/login'
             }
+            request.session['otp_verification'] = None
             return JsonResponse(response_data)
             # messages.info(request, 'Document Verification Failed!\n Please Try Again.')
             # response_data = {
@@ -912,7 +956,7 @@ def rentals_payment_gateway(request, id):
     if(username is None):
         return redirect('/login')
     
-    if request.session.get('transaction_ekyc') is None:
+    if request.session.get('transaction_ekyc') is None or (request.session.get('transaction_ekyc') is not None and request.session.get('transaction_ekyc') != id):
         # EKYC was skipped intentionally.
         messages.info(request, 'EKYC is mandatory before moving on to payment gateway.')
         return redirect('transaction_ekyc_page', id = id)
@@ -1079,7 +1123,7 @@ def rentals_payment_gateway(request, id):
                     }
         
         generateOtpEmail(username)
-        messages.info(request, 'OTP sent to registered email. Please Check SPAM FOLDER.')
+        messages.info(request, f'OTP sent to {AppUser.objects.get(username = username).email}. Please Check SPAM FOLDER in case you do not find it.')
         return render(request, 'rentals_payment_gateway.html', resp_data)
          
 
@@ -1089,7 +1133,7 @@ def payment_gateway(request, id):
             return redirect('logout_page')
     if(username is None):
         return redirect('/login')
-    if request.session.get('transaction_ekyc') is None:
+    if request.session.get('transaction_ekyc') is None or (request.session.get('transaction_ekyc') is not None and request.session.get('transaction_ekyc') != id):
         # EKYC was skipped intentionally.
         messages.info(request, 'EKYC is mandatory before moving on to payment gateway.')
         return redirect('transaction_ekyc_page', id = id)
@@ -1284,7 +1328,7 @@ def payment_gateway(request, id):
                         }
             # messages.info(request, 'Sign the above contract.')
             generateOtpEmail(username)
-            messages.info(request, 'OTP sent to registered email. Please Check SPAM FOLDER.')
+            messages.info(request, f'OTP sent to {AppUser.objects.get(username = username).email}. Please Check SPAM FOLDER in case you do not find it.')
             return render(request, 'payment_gateway.html', resp_data)
 
 def process_payment(request, id):
@@ -1632,7 +1676,7 @@ def transaction_ekyc(request, id):
                     # messages.success(request, 'Verification Successful!')
                     # Checking type of application and redirecting the user.
                     current_application = PropertyApplications.objects.get(id = id)
-                    request.session['transaction_ekyc'] = '1'
+                    request.session['transaction_ekyc'] = id
                     if current_application.application_type == 'RENT':
                         return redirect('rentals_payment_gateway_page', id= id)
                     else:

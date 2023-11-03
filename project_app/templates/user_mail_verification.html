@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Mail Verification</title>
+    <style>
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f4f4f4;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+
+        button[type="submit"] {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .duration-fields {
+            display: none;
+        }
+
+        .message-container {
+            margin-top: 10px;
+        }
+
+        .messages-success {
+            background-color: #c8f7c5; 
+            color: #009900; 
+            text-align: center;
+        }
+
+        .messages-error {
+            background-color: #fcc9c9; 
+            color: #ff0000; 
+            text-align: center;
+        }
+
+        .messages-info {
+            background-color: #fff; 
+            color: #f80788; 
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 style="text-align: center;">User Verification (OTP)</h2>
+        <div class="message-container">
+            {% if messages %}
+                <ul>
+                    {% for message in messages %}
+                    <li{% if "success" in message.tags %} class="messages-success"{% elif "error" in message.tags %} class="messages-error" {% elif "info" in message.tags %} class="messages-info"{% endif %}>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        <form action="" method="post">
+            {% csrf_token %}
+            <label for="otp">Enter OTP:</label>
+            <input type="number" id="otp" name="otp"  maxlength="6" minlength="6">
+            <br></br>
+            <button type="submit" style="text-align: center;  margin-top: 10px; margin-left: 75px;">VERIFY</button>
+        </form>
+        
+    </div>
+    
+</body>
+</html>

@@ -7,6 +7,7 @@ urlpatterns = [
     path("", views.ekyc, name = "ekyc_page"),
     path("login/", views.login_user, name = "login_page"),
     path("signup/", views.register_user, name = "signup_page"),
+    path("user_mail_verification/<int:id>", views.user_mail_verification, name = "user_mail_verification_page"),
     path("user_document_verification/<int:id>", views.user_document_verification, name = "user_document_verification_page"),
     path("logout/", views.logout_user, name = "logout_page"),
     path("dashboard/", views.dashboard_user, name="dashboard_page"),
