@@ -52,6 +52,14 @@
             max-width: 200px;
         }
 
+        .messages-info {
+            background-color: #fff; 
+            color: #f80788; 
+            text-align: center;
+            margin-left: 150px;
+            max-width: 200px;
+        }
+
         .go-to-dashboard-button {
             background-color: #3498db;
             color: #fff;
@@ -97,7 +105,7 @@
             {% if messages %}
                 <ul>
                     {% for message in messages %}
-                        <li{% if "success" in message.tags %} class="messages-success"{% elif "error" in message.tags %} class="messages-error"{% endif %}>{{ message }}</li>
+                    <li{% if "success" in message.tags %} class="messages-success"{% elif "error" in message.tags %} class="messages-error" {% elif "info" in message.tags %} class="messages-info"{% endif %}>{{ message }}</li>
                     {% endfor %}
                 </ul>
             {% endif %}

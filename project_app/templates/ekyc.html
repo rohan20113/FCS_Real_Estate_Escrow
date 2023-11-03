@@ -55,16 +55,26 @@
             margin-top: 10px; /* Add margin to separate buttons */
         }
 
-        .message-container {
-            margin-top: 10px;
+        .messages-success {
+            background-color: #c8f7c5; 
+            color: #009900; 
+            text-align: center;
+            max-width: 300px;
         }
 
-        .messages {
-            background-color: #feffcc;
-            border: 1px solid #0a0a09;
-            color: #ff0000;
-            padding: 10px;
+        .messages-error {
+            background-color: #fcc9c9; 
+            color: #ff0000; 
             text-align: center;
+            max-width: 300px;
+        }
+        
+        .messages-info {
+            background-color: #fff; 
+            color: #f80788; 
+            text-align: center;
+            margin-left: 150px;
+            max-width: 200px;
         }
     </style>
 </head>
@@ -84,9 +94,9 @@
         </form>
         <div class="message-container">
             {% if messages %}
-                <ul class="messages">
+                <ul>
                     {% for message in messages %}
-                        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                    <li{% if "success" in message.tags %} class="messages-success"{% elif "error" in message.tags %} class="messages-error" {% elif "info" in message.tags %} class="messages-info"{% endif %}>{{ message }}</li>
                     {% endfor %}
                 </ul>
             {% endif %}

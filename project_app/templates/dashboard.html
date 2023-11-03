@@ -114,6 +114,14 @@
             margin-left: 150px;
             max-width: 200px;
         }
+
+        .messages-info {
+            background-color: #fff; 
+            color: #f80788; 
+            text-align: center;
+            margin-left: 150px;
+            max-width: 200px;
+        }
     </style>
 </head>
 <body>
@@ -122,7 +130,7 @@
         <div >
             {% if messages %}
                 {% for message in messages %}
-                    <li{% if "success" in message.tags %} class="messages-success"{% elif "error" in message.tags %} class="messages-error"{% endif %}>{{ message }}</li>
+                    <li{% if "success" in message.tags %} class="messages-success"{% elif "error" in message.tags %} class="messages-error" {% elif "info" in message.tags %} class="messages-info"{% endif %}>{{ message }}</li>
                 {% endfor %}
             {% endif %}
         </div>

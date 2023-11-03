@@ -52,11 +52,11 @@ def login_user(request):
                     return redirect('dashboard_page')
         else:
             if user_flag == False:
-                messages.info(request, 'Invalid Username')
+                messages.error(request, 'Invalid Username')
                 return redirect('login_page')
                 # return render(request, 'login.html')
             elif pass_flag == False:
-                messages.info(request, 'Invalid Password')
+                messages.error(request, 'Invalid Password')
                 # return render(request, 'login.html')
                 return redirect('login_page')
     else:
@@ -77,7 +77,7 @@ def register_user(request):
         if input_password==input_confirm_password:
             # Passwords matched
             if AppUser.objects.filter(username=input_username).exists():
-                messages.info(request, 'Username already EXISTS.')
+                messages.error(request, 'Username already EXISTS.')
                 return redirect(register_user)
             # elif AppUser.objects.filter(email=input_email).exists():
             #     messages.info(request, 'Email already EXISTS.')
@@ -95,7 +95,7 @@ def register_user(request):
                 return redirect('user_document_verification_page', id = user_id)
         # Passwords unmatched.
         else:
-            messages.info(request, 'Passwords UNMATCHED')
+            messages.error(request, 'Passwords UNMATCHED')
             return redirect(register_user)
             
     else:
@@ -152,7 +152,7 @@ def user_document_verification(request, id):
                 current_user.dv = True
                 current_user.public_key = public_key_pem.decode('utf-8')
                 current_user.save()
-            messages.info(request, 'Document Verification Successful')
+            messages.success(request, 'Document Verification Successful')
             response_data = {
                 'success': True,
                 'url': '/login'
@@ -171,7 +171,7 @@ def user_document_verification(request, id):
             # Handle any exceptions that may occur during verification
             # print("Error during verification:", str(e))
             # Print specific details about the data and error
-            messages.info(request, 'Document Verification Failed!\n Please Try Again.')
+            messages.error(request, 'Document Verification Failed!\n Please Try Again.')
             response_data = {
                 'success': False,
                 'url': f'/user_document_verification/{id}'
@@ -203,18 +203,18 @@ def ekyc(request):
                 response_data = api_response.json()
                 # return JsonResponse(response_data)
                 if(response_data.get('status') == 'success'):
-                    messages.info(request, 'eKYC successful')
+                    messages.success(request, 'eKYC successful')
                     request.session['email_kyc'] = email_input
                     # request.session['password_kyc'] = password_input  
                     return redirect('/login')
                 elif response_data.get('status') == 'error':
-                    messages.info(request, response_data.get('message'))
+                    messages.error(request, response_data.get('message'))
                     return redirect('/')
             else:
-                messages.info(request, 'Error Code: {api_response.stat  us_code}')
+                messages.error(request, 'Error Code: {api_response.stat  us_code}')
                 return redirect('/')
         except requests.exceptions.RequestException as e:
-            messages.info(request, 'PLEASE TRY AGAIN LATER')
+            messages.error(request, 'PLEASE TRY AGAIN LATER')
             return redirect('/')
     else:
         # GET REQUEST
@@ -319,7 +319,7 @@ def add_property(request):
         # print((input_availability_till), (input_availability_till).reverse())
         # print(input_contract_type, input_duration)
         if(input_contract_type == 'RENT' and (input_duration == None or len(input_duration) == 0)):
-            messages.info(request, 'PLEASE FILL DURATION OF RENT')
+            messages.error(request, 'PLEASE FILL DURATION OF RENT')
             return redirect('add_property_page')
         # print(input_availability_from, input_availability_till, input_contract_type, input_state, input_facilities)
 
@@ -407,7 +407,7 @@ def edit_property(request, id = id):
     if(property.owner != username):
         return redirect('logout_page')
     if(property.type == 'DELETED'):
-        messages.info(request, "THIS PROPERTY WAS DELETED.")
+        messages.error(request, "THIS PROPERTY WAS DELETED.")
         return redirect('my_properties_page')
     return render(request, 'edit_property.html', {'property':property})
 
@@ -421,7 +421,7 @@ def update_property(request, id):
     if(property.owner != username):
         return redirect('logout_page')
     if(property.type == 'DELETED'):
-        messages.info(request, "THIS PROPERTY WAS DELETED.")
+        messages.error(request, "THIS PROPERTY WAS DELETED.")
         return redirect('my_properties_page')
     if request.method =="POST":
         property_instance = get_object_or_404(Property, pk = id)
@@ -440,7 +440,7 @@ def update_property(request, id):
         # input_availability_from = request.POST['availability-from']
         # input_availability_till = request.POST['availability-till']
         if(input_contract_type == 'RENT' and (input_duration is None or input_duration == '')):
-            messages.info(request, 'PLEASE FILL RENTAL DURATION')
+            messages.error(request, 'PLEASE FILL RENTAL DURATION')
             return redirect('edit_property_page')
         # print(input_availability_from, input_availability_till, input_contract_type, input_state, input_facilities)
 
@@ -459,6 +459,7 @@ def update_property(request, id):
             property_instance.price = input_price
             property_instance.facilities = input_facilities
             property_instance.save()
+            messages.success(request, "Successfully updated the property details.")
             return redirect('my_properties_page')   
         # print(input_availability_from, input_availability_till)
         # Creating the object
@@ -477,6 +478,7 @@ def update_property(request, id):
             property_instance.price = input_price
             property_instance.facilities = input_facilities
             property_instance.save()
+            messages.success(request, "Successfully updated the property details.")
             return redirect('my_properties_page')  
     else:
         return render(request, 'edit_property.html', {'property':property})
@@ -517,10 +519,10 @@ def apply_property_deal(request, id):
     # Check if no existing row/copy is there:
     applications = list(PropertyApplications.objects.values())
     for i in range(len(applications)):
-        if(applications[i]['property_id'] == id and applications[i]['status'] == 'ACCEPTED'):
-            if(applications[i]['interested_user'] == username):
-                messages.info(request, 'Your request has been accepted.\nPlease proceed to pay!')
-                return redirect('search_properties_page')
+        # if(applications[i]['property_id'] == id and applications[i]['status'] == 'ACCEPTED'):
+        #     if(applications[i]['interested_user'] == username):
+        #         messages.success(request, 'Your request has been accepted.\nPlease proceed to pay!')
+        #         return redirect('search_properties_page')
         if(applications[i]['property_id'] == id and applications[i]['status'] == 'PENDING'):
             if(applications[i]['interested_user'] == username):
                 messages.info(request, 'Pending Request Already Exists')
@@ -529,7 +531,7 @@ def apply_property_deal(request, id):
     # Now, we've to add this pending request for the given property.
     application = PropertyApplications.objects.create(property_id = id, interested_user = username, property_owner = property_owner_username, application_type = contract_type)
     application.save()
-    messages.info(request, 'Application Sent Successfully!')
+    messages.success(request, 'Application Sent Successfully!')
     return redirect('search_properties_page')
 
 def display_property_applications(request, id):
@@ -583,7 +585,7 @@ def reject_property_application(request, id):
     # Changing the request's status
     current_application.status = 'REJECTED'
     current_application.save()
-    messages.info(request, 'Succesfully Updated Request')
+    messages.success(request, 'Succesfully Updated Request')
     
     # # Find if more pending requests are there.
     applications = list(PropertyApplications.objects.values())
@@ -870,7 +872,7 @@ def rentals_payment_gateway(request, id):
             verifier = pkcs1_15.new(public_key)
             verifier.verify(h, signature)
         except Exception as e:
-            messages.info(request, 'Signature Error!\n Please Try Again.')
+            messages.error(request, 'Signature Error!\n Please Try Again.')
             response_data = {
                 'success': False,
                 'url': f'/rentals_payment_gateway/{id}'
@@ -948,7 +950,7 @@ def rentals_payment_gateway(request, id):
         # property_type = property_object.type
         required_amount = property_object.duration * property_object.price
         if(required_amount > current_user_balance):
-            messages.info(request, "INSUFFICIENT BALANCE!")
+            messages.error(request, "INSUFFICIENT BALANCE!")
             return redirect('search_properties_page')
         post_balance = current_user_balance - required_amount
         
@@ -1085,7 +1087,7 @@ def payment_gateway(request, id):
         if(property_type.lower() == 'rent'):
             required_amount = property_object.duration * property_object.price
             if(required_amount > current_user_balance):
-                messages.info(request, "INSUFFICIENT BALANCE!")
+                messages.error(request, "INSUFFICIENT BALANCE!")
                 return redirect('search_properties_page')
             post_balance = current_user_balance - required_amount
             
@@ -1124,7 +1126,7 @@ def payment_gateway(request, id):
             # print("REQUIRED_AMOUNT: ", required_amount, "\nBALANCE AVAILABLE: ", current_user_balance)
 
             if(required_amount > current_user_balance):
-                messages.info(request, "INSUFFICIENT BALANCE!")
+                messages.error(request, "INSUFFICIENT BALANCE!")
                 return redirect('search_properties_page')
             post_balance = current_user_balance - required_amount
             
@@ -1208,7 +1210,7 @@ def process_payment(request, id):
         # Step 1: Create Contract (including the signatures)
         # Step 2: Past history web page date should be obtained from contracts table.
 
-    messages.info(request, "Transaction SUCCESSFUL")
+    messages.success(request, "Transaction SUCCESSFUL")
     return redirect('search_properties_page')
 
 def past_buy_history(request):
