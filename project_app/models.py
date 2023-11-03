@@ -91,7 +91,7 @@ class PropertyApplications(models.Model):
     status = models.CharField(max_length=15, null = False, blank = False, default = "PENDING")
 
     def __str__(self):
-        return f"{self.property_id} {self.application_type} {self.proSperty_owner} {self.interested_user} {self.status}"
+        return f"{self.property_id} {self.application_type} {self.property_owner} {self.interested_user} {self.status}"
     
 class OTP(models.Model):
     user = models.CharField(max_length=30, null= False, blank=False, default = None, primary_key=True)

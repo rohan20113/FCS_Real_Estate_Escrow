@@ -11,6 +11,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from django.core.mail import send_mail
+from django.utils import timezone
 
 
 # Create your views here.
@@ -335,14 +336,16 @@ def add_property(request):
             city = input_city, pincode = input_pin_code, type = input_contract_type, duration = input_duration,
             price = input_price, facilities = input_facilities)
             property_to_be_added.save()
-            return redirect('dashboard_page')   
+            messages.success(request, 'Successfully added a property.')
+            return redirect('my_properties_page')   
         # print(input_availability_from, input_availability_till)
         # Creating the object
         else:
             property_to_be_added = Property.objects.create(owner = username, address_line_1 = input_addr_l1, address_line_2 = input_addr_l2, state = input_state,
             city = input_city, pincode = input_pin_code, type = input_contract_type, price = input_price, facilities = input_facilities)
             property_to_be_added.save()
-            return redirect('dashboard_page')   
+            messages.success(request, 'Successfully added a property.')
+            return redirect('my_properties_page')   
     else:
         if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
@@ -368,6 +371,7 @@ def my_properties(request):
         return render(request, 'my_properties.html', {'properties':my_properties_list})
     
 def search_properties(request):
+    request.session['transaction_ekyc'] = None
     if(request.method == 'POST'):
         username = request.session.get('username')
         if(request.session.get('email_kyc') is None):
@@ -839,6 +843,36 @@ def seller_contract(request, id):
                       }
         # messages.info(request, 'Sign the above contract.')
         return render(request, 'seller_contract.html', resp_data)
+    
+# Defining a method for generating OTP and saving its object.
+def generateOtpEmail(username):
+    otp = str(random.randint(100000, 999999))
+    expiry_time = timezone.now() + timedelta(minutes=5)
+    
+    # Creating the OTP object & saving it for the user. 
+    try:
+        otp_object = OTP.objects.get(user = username)
+        # If already exisiting OTP can be used, save time. 
+        if otp_object.valid and otp_object.expiry_time > timezone.now():
+            return
+        otp_object.valid = True
+        otp_object.otp = otp
+        otp_object.expiry_time = expiry_time
+        otp_object.save()
+    except OTP.DoesNotExist:
+        otp_object = OTP.objects.create(user = username, otp = otp, expiry_time = expiry_time, valid = True)
+        otp_object.save()
+
+    # Sending A mail to the user.
+    user_email = AppUser.objects.get(username = username).email
+    send_mail(
+        subject= 'OTP for transaction (FCS G-13 Portal)',
+        message=f'OTP: {otp}',
+        from_email='fcsgroup013@gmail.com',
+        recipient_list=[
+            user_email
+        ]
+    )
 
 def rentals_payment_gateway(request, id):
     username = request.session.get('username')
@@ -847,6 +881,10 @@ def rentals_payment_gateway(request, id):
     if(username is None):
         return redirect('/login')
     
+    if request.session.get('transaction_ekyc') is None:
+        # EKYC was skipped intentionally.
+        messages.info(request, 'You can not bypass the security measure.')
+        return redirect('transaction_ekyc_page', id = id)
     current_application = PropertyApplications.objects.get(id = id)
     property = Property.objects.get(id = current_application.property_id)
     if(property.owner == username or current_application.status != 'ACCEPTED' or current_application.interested_user != username):
@@ -854,6 +892,30 @@ def rentals_payment_gateway(request, id):
     
     if request.method == 'POST':
         data = json.loads(request.body)
+        otp = data.get('otp', None)
+        otp_object = OTP.objects.get(user = username)
+        if otp_object.valid == False:
+            messages.error(request, 'OTP already used before in some old transaction.')
+            response_data = {
+                'success': False,
+                'url': f'/rentals_payment_gateway/{id}'
+            }
+            return JsonResponse(response_data)
+        if otp_object.expiry_time < timezone.now():
+            messages.error(request, 'OTP expired. Please check your mail again.')
+            response_data = {   
+                'success': False,
+                'url': f'/rentals_payment_gateway/{id}'
+            }
+            return JsonResponse(response_data)
+        if otp != otp_object.otp:
+            messages.error(request, 'OTP did not match.')
+            response_data = {
+                'success': False,
+                'url': f'/rentals_payment_gateway/{id}'
+            }
+            return JsonResponse(response_data)
+
         base64JsonString = data.get('contract_payload', None)
         # jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
         base64Signature = data.get('signature', None)
@@ -929,6 +991,9 @@ def rentals_payment_gateway(request, id):
         current_application_obj.status = 'SUCCESS'
         current_application_obj.save()
 
+        # Update the OTP object validity.
+        otp_object.valid = False
+        otp_object.save()
 
         messages.success(request, 'Transaction Successful!')
         response_data = {
@@ -951,7 +1016,7 @@ def rentals_payment_gateway(request, id):
         # property_type = property_object.type
         required_amount = property_object.duration * property_object.price
         if(required_amount > current_user_balance):
-            messages.error(request, "INSUFFICIENT BALANCE!")
+            messages.error(request, "INSUFFICIENT BALANCE! Please update it & proceed again!")
             return redirect('search_properties_page')
         post_balance = current_user_balance - required_amount
         
@@ -981,7 +1046,9 @@ def rentals_payment_gateway(request, id):
                     'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'party_type': 'Lessee',
                     'post_balance': post_balance
                     }
-        # messages.info(request, 'Sign the above contract.')
+        
+        generateOtpEmail(username)
+        messages.info(request, 'OTP sent to registered email. Please Check SPAM FOLDER.')
         return render(request, 'rentals_payment_gateway.html', resp_data)
          
 
@@ -991,7 +1058,10 @@ def payment_gateway(request, id):
             return redirect('logout_page')
     if(username is None):
         return redirect('/login')
-    
+    if request.session.get('transaction_ekyc') is None:
+        # EKYC was skipped intentionally.
+        messages.info(request, 'You can not bypass the security measure')
+        return redirect('transaction_ekyc_page', id = id)
     current_application = PropertyApplications.objects.get(id = id)
     property = Property.objects.get(id = current_application.property_id)
     if(property.owner == username or current_application.status != 'ACCEPTED' or current_application.interested_user != username):
@@ -999,6 +1069,29 @@ def payment_gateway(request, id):
     
     if request.method == 'POST':
         data = json.loads(request.body)
+        otp = data.get('otp', None)
+        otp_object = OTP.objects.get(user = username)
+        if otp_object.valid == False:
+            messages.error(request, 'OTP already used before in some old transaction.')
+            response_data = {
+                'success': False,
+                'url': f'/rentals_payment_gateway/{id}'
+            }
+            return JsonResponse(response_data)
+        if otp_object.expiry_time < timezone.now():
+            messages.error(request, 'OTP expired. Please check your mail again.')
+            response_data = {
+                'success': False,
+                'url': f'/rentals_payment_gateway/{id}'
+            }
+            return JsonResponse(response_data)
+        if otp != otp_object.otp:
+            messages.error(request, 'OTP did not match.')
+            response_data = {
+                'success': False,
+                'url': f'/rentals_payment_gateway/{id}'
+            }
+            return JsonResponse(response_data)
         base64JsonString = data.get('contract_payload', None)
         # jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
         base64Signature = data.get('signature', None)
@@ -1066,6 +1159,9 @@ def payment_gateway(request, id):
         current_application_obj.status = 'SUCCESS'
         current_application_obj.save()        
 
+        # Updating the OTP object.
+        otp_object.valid = False
+        otp_object.save()
         messages.success(request, 'Transaction Successful!')
         response_data = {
             'success': True,
@@ -1088,7 +1184,7 @@ def payment_gateway(request, id):
         if(property_type.lower() == 'rent'):
             required_amount = property_object.duration * property_object.price
             if(required_amount > current_user_balance):
-                messages.error(request, "INSUFFICIENT BALANCE!")
+                messages.error(request, "INSUFFICIENT BALANCE! Please update it & proceed again!")
                 return redirect('search_properties_page')
             post_balance = current_user_balance - required_amount
             
@@ -1156,6 +1252,8 @@ def payment_gateway(request, id):
                         'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'post_balance': post_balance
                         }
             # messages.info(request, 'Sign the above contract.')
+            generateOtpEmail(username)
+            messages.info(request, 'OTP sent to registered email. Please Check SPAM FOLDER.')
             return render(request, 'payment_gateway.html', resp_data)
 
 def process_payment(request, id):
@@ -1503,6 +1601,7 @@ def transaction_ekyc(request, id):
                     # messages.success(request, 'Verification Successful!')
                     # Checking type of application and redirecting the user.
                     current_application = PropertyApplications.objects.get(id = id)
+                    request.session['transaction_ekyc'] = '1'
                     if current_application.application_type == 'RENT':
                         return redirect('rentals_payment_gateway_page', id= id)
                     else:

@@ -115,22 +115,18 @@
             background-color: #c8f7c5; 
             color: #009900; 
             text-align: center;
-            max-width: 300px;
         }
 
         .messages-error {
             background-color: #fcc9c9; 
             color: #ff0000; 
             text-align: center;
-            max-width: 300px;
         }
 
         .messages-info {
             background-color: #fff; 
             color: #f80788; 
             text-align: center;
-            margin-left: 150px;
-            max-width: 200px;
         }
     </style>
 </head>
@@ -210,7 +206,6 @@
                 </tr>
             </tbody>
         </table>
-        <br></br>
         {% if messages %}
         <ul class="messages">
             {% for message in messages %}
@@ -222,6 +217,9 @@
         <div class="private-key-input">
             <label for="private-key">Private Key:</label>
             <input type="text" id="private-key" name="private-key" placeholder="Enter your private key without headers & footers." style="width: 80%;">
+            <br></br>
+            <label for="OTP">OTP:</label>
+            <input type="number" id="OTP" name="OTP" style="width: 30%;" maxlength="6" minlength="6">
         </div>
         <div class="button-container">
             <button class ='submit-key-button' id="sign_contract" class="button">Sign & Submit</button>
@@ -333,6 +331,7 @@
             const data = {
                 'contract_payload': base64JsonString,
                 'signature': signatureBase64,
+                'otp': document.getElementById('OTP').value
             };
 
             sendPostRequest(url, data);
