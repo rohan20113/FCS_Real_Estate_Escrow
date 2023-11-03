@@ -1424,4 +1424,11 @@ def edit_profile(request):
         return redirect('dashboard_page')
     else:
         # GET request.
-        return render(request, 'edit_profile.html')
+        current_user = AppUser.objects.get(username = username)
+        return render(request, 'edit_profile.html', {
+            'username': username,
+            'full_name': current_user.first_name + " " + current_user.second_name,
+            'email_address': current_user.email,
+            'contact_number': current_user.contact,
+            'balance': current_user.balance
+        })
