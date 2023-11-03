@@ -137,3 +137,11 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Setting it to 3 hours
 SESSION_COOKIE_AGE = 10800
+
+
+# Email configurations:
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'fcsgroup013@gmail.com'
+EMAIL_HOST_PASSWORD = 'tftbpelepkjowwmc'
+EMAIL_USE_TLS = True

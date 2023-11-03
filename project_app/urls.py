@@ -33,4 +33,5 @@ urlpatterns = [
     path("view_contract/<int:id>", views.view_contract, name = "view_contract_page"),
     path("verify_contract", views.verify_contract, name = "verify_contract_page"),
     path("edit_profile", views.edit_profile, name = "edit_profile_page"),
+    path("transaction_ekyc/<int:id>", views.transaction_ekyc, name = "transaction_ekyc_page"),
 ]

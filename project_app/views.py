@@ -1,16 +1,17 @@
 from django.shortcuts import render, redirect, reverse
-from .models import AppUser, Property, PropertyApplications, Property_Transfer_Contract, RentalsContract
+from .models import AppUser, Property, PropertyApplications, Property_Transfer_Contract, RentalsContract, OTP
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib import messages
 from django.http import JsonResponse
-import hashlib, json
-import requests
+import hashlib, json, requests, random
 from django.shortcuts import get_object_or_404
-from datetime import date 
+from datetime import date, datetime, timedelta 
 import base64
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
+from django.core.mail import send_mail
+
 
 # Create your views here.
 # @csrf_exempt
@@ -218,7 +219,7 @@ def ekyc(request):
             return redirect('/')
     else:
         # GET REQUEST
-        if(request.session.get('email_kyc') is not None and request.session.get('password_kyc') is not None):
+        if(request.session.get('email_kyc') is not None):
             if(request.session.get('username') is None):
                 return redirect('login_page')
             else:
@@ -1474,3 +1475,47 @@ def edit_profile(request):
             'contact_number': current_user.contact,
             'balance': current_user.balance
         })
+    
+def transaction_ekyc(request, id):
+    username = request.session.get('username')
+    
+    if(request.session.get('email_kyc') is None):
+        return redirect('logout_page')
+    
+    if(username is None):
+        return redirect('login_page')
+    
+    if request.method == 'POST':
+        email_input = request.POST['email'].lower()
+        password_input = request.POST['password']
+        # print(type(email_input))
+        dictionary = {
+            "email": email_input,
+            "password":password_input
+        }
+        # print(email_input, password_input)
+        # Will call the API here and set the flag accordingly.
+        try:
+            api_response = requests.post('https://192.168.3.39:5000/kyc', json = dictionary, verify= False)
+            if api_response.status_code == 200:
+                response_data = api_response.json()
+                if(response_data.get('status') == 'success'):
+                    # messages.success(request, 'Verification Successful!')
+                    # Checking type of application and redirecting the user.
+                    current_application = PropertyApplications.objects.get(id = id)
+                    if current_application.application_type == 'RENT':
+                        return redirect('rentals_payment_gateway_page', id= id)
+                    else:
+                        return redirect('payment_gateway_page', id = id)
+                elif response_data.get('status') == 'error':
+                    messages.error(request, response_data.get('message'))
+                    return redirect('transaction_ekyc_page', id = id)
+            else:
+                messages.error(request, 'Error Code: {api_response.stat  us_code}')
+                return redirect('transaction_ekyc_page', id = id)
+        except requests.exceptions.RequestException as e:
+            messages.error(request, 'PLEASE TRY AGAIN LATER')
+            return redirect('transaction_ekyc_page', id = id)
+    else:
+        # GET Request.
+        return render(request, 'transaction_ekyc.html', {'id': id})

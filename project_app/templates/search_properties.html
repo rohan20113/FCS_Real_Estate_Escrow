@@ -520,11 +520,11 @@
                 if (action_element) {
                     action_element.textContent = 'PAY'; // Change the text content
                     // console.log(current_application_id);
-                    if(cells[6].textContent.toLowerCase() == 'rent'){
-                        action_element.href = '/rentals_payment_gateway/' + current_application_id; // Change the href
-                    }else{
-                        action_element.href = '/payment_gateway/' + current_application_id; // Change the href
-                    }
+                    // if(cells[6].textContent.toLowerCase() == 'rent'){
+                    action_element.href = '/transaction_ekyc/' + current_application_id; // Change the href
+                    // }else{
+                    //     action_element.href = '/payment_gateway/' + current_application_id; // Change the href
+                    // }
                 }
             }
         });
