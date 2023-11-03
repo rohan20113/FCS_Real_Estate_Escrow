@@ -414,6 +414,11 @@ def edit_property(request, id = id):
     if(property.type == 'DELETED'):
         messages.error(request, "THIS PROPERTY WAS DELETED.")
         return redirect('my_properties_page')
+
+    if(property.type == 'ON LEASE'):
+        messages.error(request, 'You can not modify a property ON LEASE')
+        return redirect('my_properties_page')
+    
     return render(request, 'edit_property.html', {'property':property})
 
 def update_property(request, id):
@@ -428,6 +433,11 @@ def update_property(request, id):
     if(property.type == 'DELETED'):
         messages.error(request, "THIS PROPERTY WAS DELETED.")
         return redirect('my_properties_page')
+    
+    if(property.type == 'ON LEASE'):
+        messages.error(request, 'can not modify a property on lease')
+        return redirect('my_properties_page')
+    
     if request.method =="POST":
         property_instance = get_object_or_404(Property, pk = id)
         # input_addr_l1 = request.POST['address-line-1']
@@ -465,6 +475,11 @@ def update_property(request, id):
             property_instance.facilities = input_facilities
             property_instance.save()
             messages.success(request, "Successfully updated the property details.")
+            # Rejecting all current applications.
+            applications = PropertyApplications.objects.filter(property_id=id, status='PENDING')
+            for application in applications:
+                application.status = 'REJECTED'
+                application.save()
             return redirect('my_properties_page')   
         # print(input_availability_from, input_availability_till)
         # Creating the object
@@ -483,6 +498,10 @@ def update_property(request, id):
             property_instance.price = input_price
             property_instance.facilities = input_facilities
             property_instance.save()
+            applications = PropertyApplications.objects.filter(property_id=id, status='PENDING')
+            for application in applications:
+                application.status = 'REJECTED'
+                application.save()
             messages.success(request, "Successfully updated the property details.")
             return redirect('my_properties_page')  
     else:
@@ -497,8 +516,11 @@ def delete_property(request, id):
     property = Property.objects.get(id=id)
     if(property.owner != username):
         return redirect('logout_page')
+    
+    if property.type == 'ON LEASE':
+        messages.error(request, 'You can not delete a property ON LEASE.')
+        return redirect('my_properties_page')
     # property.delete()
-    # Mark the property_status as DELETED. (May be used in future in contracts/applications processing)
     property.type = 'DELETED'
     property.save()
     return redirect('my_properties_page')
@@ -546,8 +568,17 @@ def display_property_applications(request, id):
     if(username is None):
         return redirect('/login')
     property = Property.objects.get(id = id)
+
     if property.owner != username:
         return redirect('logout_page')
+    
+    if property.type == 'DELETED':
+        messages.error(request, 'No applications exist for a deleted property.')
+        return redirect('my_properties_page')
+
+    if property.type == 'ON LEASE':
+        messages.error(request, 'No applications are allowed for a property ON LEASE.')
+        return redirect('my_properties_page')
 
     # accepted_applications = PropertyApplications.objects.filter(property_id=id, status='ACCEPTED')
     accepted_applications = []
@@ -883,7 +914,7 @@ def rentals_payment_gateway(request, id):
     
     if request.session.get('transaction_ekyc') is None:
         # EKYC was skipped intentionally.
-        messages.info(request, 'You can not bypass the security measure.')
+        messages.info(request, 'EKYC is mandatory before moving on to payment gateway.')
         return redirect('transaction_ekyc_page', id = id)
     current_application = PropertyApplications.objects.get(id = id)
     property = Property.objects.get(id = current_application.property_id)
@@ -1060,7 +1091,7 @@ def payment_gateway(request, id):
         return redirect('/login')
     if request.session.get('transaction_ekyc') is None:
         # EKYC was skipped intentionally.
-        messages.info(request, 'You can not bypass the security measure')
+        messages.info(request, 'EKYC is mandatory before moving on to payment gateway.')
         return redirect('transaction_ekyc_page', id = id)
     current_application = PropertyApplications.objects.get(id = id)
     property = Property.objects.get(id = current_application.property_id)
