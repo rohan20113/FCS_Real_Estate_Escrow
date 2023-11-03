@@ -877,12 +877,30 @@ def rentals_payment_gateway(request, id):
             }
             return JsonResponse(response_data)
         
+        # Signing with admin key.
+        try:
+            with open('/home/iiitd/dj_dir/project/project_app/apk.txt','r') as akf:
+                key = akf.read()
+            # print(key)
+            pk = RSA.import_key(key)
+            # print(pk)
+            admin_sign = pkcs1_15.new(pk).sign(h)
+            admin_b64_sign = base64.b64encode(admin_sign).decode('utf-8')
+        except:
+            # print("Error while signing with admin keys")
+            messages.error(request, 'Signature Error (T2)!\n Please Try Again.')
+            response_data = {
+                'success': False,
+                'url': f'/payment_gateway/{id}'
+            }
+            return JsonResponse(response_data)
+        
         # Signature verification successful. 
         lessee_obj = AppUser.objects.get(username = username)
         current_application = PropertyApplications.objects.get(id = id)
         property = Property.objects.get(id = current_application.property_id)
         # Create a contract object and save the string. 
-        signed_token = base64JsonString + "." + base64Signature
+        signed_token = base64JsonString + "." + base64Signature + "." + admin_b64_sign
         contract_value = property.duration * property.price
         rentals_object = RentalsContract.objects.create(application_id = id, property_id = current_application.property_id,
                                                         property_address_line_1 = property.address_line_1, property_address_line_2 = property.address_line_2,
@@ -1004,10 +1022,28 @@ def payment_gateway(request, id):
             }
             return JsonResponse(response_data)
         
+        # Signing with admin key.
+        try:
+            with open('/home/iiitd/dj_dir/project/project_app/apk.txt','r') as akf:
+                key = akf.read()
+            # print(key)
+            pk = RSA.import_key(key)
+            # print(pk)
+            admin_sign = pkcs1_15.new(pk).sign(h)
+            admin_b64_sign = base64.b64encode(admin_sign).decode('utf-8')
+        except:
+            # print("Error while signing with admin keys")
+            messages.error(request, 'Signature Error (T2)!\n Please Try Again.')
+            response_data = {
+                'success': False,
+                'url': f'/payment_gateway/{id}'
+            }
+            return JsonResponse(response_data)
+        
         # Signature verification successful. 
         # Append the signature.
         contract_object = Property_Transfer_Contract.objects.get(application_id = id)
-        contract_object.token = contract_object.token + "." + base64Signature
+        contract_object.token = contract_object.token + "." + base64Signature + "." + admin_b64_sign
         contract_object.save()
 
         # Changing the owner.
@@ -1413,15 +1449,19 @@ def edit_profile(request):
         return redirect('login_page')
     
     if request.method == 'POST':
-        contact = request.POST['contact']
-        balance = request.POST['balance']
+        try:
+            contact = request.POST['contact']
+            balance = request.POST['balance']
 
-        current_user = AppUser.objects.get(username = username)
-        current_user.balance = balance
-        current_user.contact = contact
-        current_user.save()
-        messages.success(request, 'SAVED PROFILE SUCCESSFULLY')
-        return redirect('dashboard_page')
+            current_user = AppUser.objects.get(username = username)
+            current_user.balance = balance
+            current_user.contact = contact
+            current_user.save()
+            messages.success(request, 'SAVED PROFILE SUCCESSFULLY')
+            return redirect('dashboard_page')
+        except:
+            messages.error(request, "Please Try Again Later.")
+            return redirect('dashboard_page')
     else:
         # GET request.
         current_user = AppUser.objects.get(username = username)
