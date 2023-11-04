@@ -1628,13 +1628,34 @@ def edit_profile(request):
         try:
             contact = request.POST['contact']
             balance = request.POST['balance']
-
-            current_user = AppUser.objects.get(username = username)
-            current_user.balance = balance
-            current_user.contact = contact
-            current_user.save()
-            messages.success(request, 'SAVED PROFILE SUCCESSFULLY')
-            return redirect('dashboard_page')
+            # Checking for password.
+            password = request.POST['newPassword']
+            confirmPassword = request.POST['confirmPassword']
+            if(password == ''):
+                current_user = AppUser.objects.get(username = username)
+                current_user.balance = balance
+                current_user.contact = contact
+                current_user.save()
+                messages.success(request, 'SAVED PROFILE SUCCESSFULLY')
+                return redirect('dashboard_page')
+            else:
+                # Password also needs to be changed.
+                if password!= confirmPassword:
+                    messages.error(request, 'Passwords DID NOT MATCH.')
+                    return redirect(edit_profile)
+                # Passwords matched. -> Calculate hash and update the user profile.
+                hash = hashlib.sha256()
+                hash.update(password.encode())
+                new_password = hash.hexdigest()
+                current_user = AppUser.objects.get(username = username)
+                current_user.balance = balance
+                current_user.contact = contact
+                current_user.password = new_password
+                current_user.save()
+                request.session['username'] = None
+                # Redirecting to the login page for a fresh login. 
+                messages.success(request, 'Profile & password have been updated successfully')
+                return redirect('login_page')
         except:
             messages.error(request, "Please Try Again Later.")
             return redirect('dashboard_page')

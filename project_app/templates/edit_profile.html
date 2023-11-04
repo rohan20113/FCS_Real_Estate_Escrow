@@ -54,6 +54,15 @@
             text-align: center;
         }
 
+        .toggle-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .toggle-label {
+            margin-right: 10px;
+        }
+
         .go-to-dashboard-button {
             background-color: #3498db;
             color: #fff;
@@ -92,8 +101,22 @@
             
             <label for="balance">Update Balance:</label>
             <input type="number" id="balance" name="balance" value="{{balance}}" max="1000000000">
+            
+            <label class="toggle-container">
+                <span class="toggle-label">Change Password</span>
+                <input type="checkbox" id="passwordToggle">
+            </label>
+            
+            <div class="duration-fields">
+                <label for="newPassword">New Password</label>
+                <input type="password" id="newPassword" name="newPassword">
+                
+                <label for="confirmPassword">Re-enter New Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword">
+            </div>
+            
             <br></br>
-            <button type="submit" style="text-align: center;  margin-top: 10px; margin-left: 75px;">SAVE</button>
+            <button id = 'submitButton' type="submit" style="text-align: center;  margin-top: 10px; margin-left: 75px;">SAVE</button>
         </form>
         <div class="message-container">
             {% if messages %}
@@ -105,6 +128,40 @@
             {% endif %}
         </div>
     </div>
-    
+
+    <script>
+        document.getElementById('submitButton').addEventListener('click', function(){
+            var check = document.getElementById('passwordToggle');
+            if(check.checked == true){
+                durationFields.style.display = "block";
+                var pass = document.getElementById('newPassword');
+                pass.setAttribute("required", true);
+                document.getElementById("confirmPassword").setAttribute("required", true);
+            }else{
+                durationFields.style.display = "none";
+                document.getElementById('newPassword').value = "";
+                document.getElementById("newPassword").removeAttribute("required");
+                document.getElementById('confirmPassword').value = "";
+                document.getElementById("confirmPassword").removeAttribute("required");
+            }
+        })
+
+        document.getElementById("passwordToggle").addEventListener("change", function() {
+            var durationFields = document.querySelector(".duration-fields");
+            if (this.checked) {
+                durationFields.style.display = "block";
+                document.getElementById('newPassword').setAttribute('minlength', "4");
+                document.getElementById('newPassword').setAttribute('maxlength', "8");
+                document.getElementById("newPassword").setAttribute("required", true);
+                document.getElementById("confirmPassword").setAttribute("required", true);
+            } else {
+                durationFields.style.display = "none";
+                document.getElementById('newPassword').value = "";
+                document.getElementById("newPassword").removeAttribute("required");
+                document.getElementById('confirmPassword').value = "";
+                document.getElementById("confirmPassword").removeAttribute("required");
+            }
+        });
+    </script>
 </body>
 </html>
