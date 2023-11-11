@@ -460,6 +460,8 @@ def edit_property(request, id = id):
         return redirect('my_properties_page')
 
     if(property.type == 'ON LEASE'):
+        # Calculating the expiration of the lease contract.
+        
         messages.error(request, 'You can not modify a property ON LEASE')
         return redirect('my_properties_page')
     
@@ -780,7 +782,7 @@ def lessor_contract(request, id):
                                                         property_address_line_1 = property.address_line_1, property_address_line_2 = property.address_line_2,
                                                         property_state = property.state, property_city = property.city, property_pincode = property.pincode,
                                                         username = current_application.property_owner, first_name = lessor_obj.first_name, second_name = lessor_obj.second_name, 
-                                                        party_type='lessor' ,date_of_agreement = date.today(), token = signed_token, duration = property.duration,
+                                                        party_type='lessor' ,date_of_agreement = timezone.now().date(), token = signed_token, duration = property.duration,
                                                         rent_per_month = property.price, total_rent = contract_value)
         rentals_object.save()
         # print(rentals_object)
@@ -801,7 +803,7 @@ def lessor_contract(request, id):
         property_city = property.city
         property_pincode = property.pincode
         contract_value = property.price * property.duration
-        date_of_agreement = date.today()
+        date_of_agreement = timezone.now().date()
 
         # buyer = AppUser.objects.get(username = current_application.interested_user)
         # buyer_name = buyer.first_name + " " + buyer.second_name
@@ -882,7 +884,7 @@ def seller_contract(request, id):
                                                                     property_state = property.state, property_city = property.city, property_pincode = property.pincode,
                                                                     buyer = current_application.interested_user, first_name_buyer = buyer_obj.first_name, second_name_buyer = buyer_obj.second_name,
                                                                     seller = current_application.property_owner, first_name_seller = seller_obj.first_name, second_name_seller = seller_obj.second_name, 
-                                                                    price = property.price, date_of_agreement = date.today(), token = signed_token)
+                                                                    price = property.price, date_of_agreement = timezone.now().date(), token = signed_token)
         contract_object.save()
         messages.success(request, 'Successfully approved the application')
         response_data = {
@@ -901,7 +903,7 @@ def seller_contract(request, id):
         property_city = property.city
         property_pincode = property.pincode
         contract_value = property.price
-        date_of_agreement = date.today()
+        date_of_agreement = timezone.now().date()
 
         buyer = AppUser.objects.get(username = current_application.interested_user)
         buyer_name = buyer.first_name + " " + buyer.second_name
@@ -1046,7 +1048,7 @@ def rentals_payment_gateway(request, id):
                                                         property_address_line_1 = property.address_line_1, property_address_line_2 = property.address_line_2,
                                                         property_state = property.state, property_city = property.city, property_pincode = property.pincode,
                                                         username = current_application.interested_user, first_name = lessee_obj.first_name, second_name = lessee_obj.second_name, 
-                                                        party_type='lessee' ,date_of_agreement = date.today(), token = signed_token, duration = property.duration,
+                                                        party_type='lessee' ,date_of_agreement = timezone.now().date(), token = signed_token, duration = property.duration,
                                                         rent_per_month = property.price, total_rent = contract_value)
         rentals_object.save()
 
@@ -1714,3 +1716,40 @@ def transaction_ekyc(request, id):
     else:
         # GET Request.
         return render(request, 'transaction_ekyc.html', {'id': id})
+
+def report_malicious_buyer(request, id):
+    username = request.session.get('username')
+    
+    if(request.session.get('email_kyc') is None):
+        return redirect('logout_page')
+    
+    if(username is None):
+        return redirect('login_page')
+    
+    currentApplication = PropertyApplications.objects.get(id = id)
+    buyer = currentApplication.interested_user
+    if currentApplication.property_owner != username:
+        messages.error(request, 'You can not report a buyer in an application where you are not the property owner.')
+        return redirect('my_properties_page')
+    status = currentApplication.status
+    if status == 'PENDING':
+        messages.error(request, 'Can not report a buyer without a valid contract in progress')
+        return redirect('my_properties_page')
+    elif status == 'SUCCESS':
+        messages.error(request, 'Can not report a buyer once the contract has been completed.')
+        return redirect('my_properties_page')
+    elif status == 'ACCEPTED':
+        date_of_agreement = None
+        if currentApplication.application_type == 'RENT':
+            date_of_agreement = RentalsContract.objects.get(application_id = id).date_of_agreement
+        else:
+            date_of_agreement = Property_Transfer_Contract.objects.get(application_id = id).date_of_agreement
+        if timezone.now().date() - date_of_agreement <= timedelta(days = 2):
+            messages.info(request, 'You can not report a buyer before 2 days has been passed after agreement.')
+            return redirect('my_properties_page')
+        else:
+            messages.success(request, f'The buyer with the username {buyer} has been reported to the admin.')
+            return redirect('my_properties_page')
+    elif status == 'REJECTED':
+        messages.error(request, 'You can not report a buyer without having a PENDING contract.')
+        return redirect('my_properties_page')

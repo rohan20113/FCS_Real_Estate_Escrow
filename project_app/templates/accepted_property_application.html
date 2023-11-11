@@ -169,8 +169,8 @@
                         <td>{{ application.interested_user }}</td>
                         <td>PAYMENT PENDING</td>
                         <td>
-                            <a href="/my_properties">
-                                <img src ="{% static 'report_user.jpg' %}" alt="Accept_Application">
+                            <a href="/report_malicious_buyer/{{application.id}}" id="report_user">
+                                <img src ="{% static 'report_user.jpg' %}" alt="Report User">
                             </a>
                         </td>
                     </tr>
