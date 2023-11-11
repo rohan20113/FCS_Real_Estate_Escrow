@@ -274,6 +274,11 @@ def ekyc(request):
         return render(request, 'ekyc.html')
 
 def dashboard_admin(request):
+    username = request.session.get('username')
+    if(request.session.get('email_kyc') is None):
+            return redirect('logout_page')
+    if(username is None):
+        return redirect('login_page')
     if request.method == "POST":
         username = request.session.get('username')
         # print(username)
@@ -302,7 +307,7 @@ def dashboard_user(request):
         if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
         if(username is None):
-            return redirect('/login')
+            return redirect('login_page')
         # if(username is None):
         # return redirect('/')
         pass
@@ -1742,7 +1747,7 @@ def report_malicious_buyer(request, id):
         # Check if already reported.
         try:
             previous_record = ReportedBuyer.objects.get(application_id = id)
-            messages.info(request, f'You have already reported {currentApplication.interested_user} .')
+            messages.info(request, f'You have already reported the user: {currentApplication.interested_user} .')
             return redirect('my_properties_page')
         except ReportedBuyer.DoesNotExist:
             # Reporting the buyer for the first time.
@@ -1758,8 +1763,18 @@ def report_malicious_buyer(request, id):
                 # Create a new report object.
                 new_report = ReportedBuyer.objects.create(application_id = id, buyer = currentApplication.interested_user, seller = username)
                 new_report.save()
-                messages.success(request, f'The buyer with the username {buyer} has been reported to the admin.')
+                messages.success(request, f'User {buyer} has been reported to the admin.')
                 return redirect('my_properties_page')
     elif status == 'REJECTED':
         messages.error(request, 'You can not report a buyer without having a PENDING contract.')
         return redirect('my_properties_page')
+
+def reported_buyers_list(request):
+    username = request.session.get('username')
+    if(request.session.get('email_kyc') is None):
+            return redirect('logout_page')
+    if(username is None):
+        return redirect('login_page')
+    
+    # Still need to add logic for only admin to be able to access it. (optional)
+    return render(request, 'reported_buyer.html', context = {'reports': ReportedBuyer.objects.all()})

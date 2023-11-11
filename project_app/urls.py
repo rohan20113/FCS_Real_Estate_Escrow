@@ -36,4 +36,5 @@ urlpatterns = [
     path("edit_profile", views.edit_profile, name = "edit_profile_page"),
     path("transaction_ekyc/<int:id>", views.transaction_ekyc, name = "transaction_ekyc_page"),
     path("report_malicious_buyer/<int:id>", views.report_malicious_buyer, name = "report_malicious_buyer_page"),
+    path("reported_buyers_list", views.reported_buyers_list, name = "reported_buyers_list_page"),
 ]

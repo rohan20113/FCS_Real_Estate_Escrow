@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard</title>
     <style>
         body {
@@ -34,31 +36,31 @@
             margin: 0;
         }
 
-        .logout-button {
-            background-color: #e74c3c;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
+        .nav-buttons {
+            display: flex;
         }
 
-        .user_list-button {
-            background-color: #6d3ce7;
+        .nav-buttons a {
+            margin-left: 10px;
+            text-decoration: none;
             color: #fff;
-            border: none;
-            margin-left: 570px;
             padding: 10px 5px;
             font-size: 16px;
             border-radius: 5px;
             cursor: pointer;
-            text-decoration: none;
         }
 
-        .logout-button:hover {
-            background-color: #c0392b;
+        .nav-buttons a:hover {
+            background-color: #000000;
+        }
+
+        .logout-button {
+            background-color: #d40d0d;
+        }
+
+        .user_list-button,
+        .reported-buyer-list-button {
+            background-color: #0d14d4;
         }
 
         table {
@@ -87,8 +89,11 @@
         {% csrf_token %}
         <div class="navbar">
             <h2>User Dashboard</h2>
-            <a class="user_list-button" href="/users_list">Users</a>
-            <a class="logout-button" href="/logout">Logout</a>
+            <div class="nav-buttons">
+                <a class="reported-buyer-list-button" href="/reported_buyers_list"> Reported Buyers List </a>
+                <a class="user_list-button" href="/users_list">Users List</a>
+                <a class="logout-button" href="/logout">Logout</a>
+            </div>
         </div>
         <table>
             <thead>
