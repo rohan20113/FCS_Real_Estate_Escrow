@@ -159,7 +159,7 @@
                     <tr>
                         <th>User</th>
                         <th>Status</th>
-                        <th>Action</th>
+                        <th>Action (Report & Cancel Transaction)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -168,7 +168,7 @@
                         <!-- <td>{{ property.id }}</td> -->
                         <td>{{ application.interested_user }}</td>
                         <td>PAYMENT PENDING</td>
-                        <td>
+                        <td> 
                             <a href="/report_malicious_buyer/{{application.id}}" id="report_user">
                                 <img src ="{% static 'report_user.jpg' %}" alt="Report User">
                             </a>

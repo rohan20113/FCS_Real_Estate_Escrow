@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard</title>
     <style>
         body {
@@ -8,14 +10,12 @@
             background-color: #f2f2f2;
             margin: 0;
             padding: 0;
-            height: fit-content;
-            width: fit-content;
         }
 
         .container {
             max-width: 1200px;
             margin: 25px;
-            margin-left:100px;
+            margin-left: 100px;
             padding: 20px;
             border: 2px solid #3498db;
             background-color: #fff;
@@ -42,7 +42,8 @@
             align-items: center;
         }
 
-        .dashboard-button{
+        .dashboard-button,
+        .logout-button {
             background-color: #0d14d4;
             color: #fff;
             border: none;
@@ -53,6 +54,7 @@
             text-decoration: none;
             margin-left: 10px;
         }
+
         .logout-button {
             background-color: #d40d0d;
             color: #fff;
@@ -62,9 +64,8 @@
             border-radius: 5px;
             cursor: pointer;
             text-decoration: none;
-            margin-left: 10px;
+            margin-left: 5px; /* Adjusted margin for logout button */
         }
-
 
         .dashboard-button:hover,
         .logout-button:hover {
@@ -96,8 +97,10 @@
     <div class="container">
         <div class="navbar">
             <h2>Users List</h2>
-            <a class="dashboard-button" href="/admin_dashboard">Dashboard</a>
-            <a class="logout-button" href="/logout">Logout</a>
+            <div class="navbar-buttons">
+                <a class="dashboard-button" href="/admin_dashboard">Dashboard</a>
+                <a class="logout-button" href="/logout">Logout</a>
+            </div>
         </div>
         <table>
             <thead>
@@ -107,7 +110,6 @@
                     <th>Last Name</th>
                     <th>Contact</th>
                     <th>Email</th>
-                    <!-- <th>Public Key</th> -->
                     <th>Balance</th>
                 </tr>
             </thead>
@@ -119,7 +121,6 @@
                     <td>{{ user.second_name }}</td>
                     <td>{{ user.contact }}</td>
                     <td>{{ user.email }}</td>
-                    <!-- <td>{{ user.public_key }}</td> -->
                     <td>{{ user.balance }}</td>
                 </tr>
                 {% endfor %}

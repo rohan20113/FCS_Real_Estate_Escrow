@@ -1757,16 +1757,23 @@ def report_malicious_buyer(request, id):
             else:
                 date_of_agreement = Property_Transfer_Contract.objects.get(application_id = id).date_of_agreement
             if timezone.now().date() - date_of_agreement < timedelta(days = 2):
-                messages.info(request, 'You can not report a buyer before 2 days has been passed after agreement.')
+                messages.info(request, 'You can not report a buyer within 2 immediate days after agreement.')
                 return redirect('my_properties_page')
             else:
                 # Create a new report object.
                 new_report = ReportedBuyer.objects.create(application_id = id, buyer = currentApplication.interested_user, seller = username)
                 new_report.save()
-                messages.success(request, f'User {buyer} has been reported to the admin.')
+
+                # cancelling the transaction.
+                currentApplication.status = 'CANCELLED'
+                currentApplication.save()
+                messages.success(request, f'User {buyer} has been reported & Transaction has been cancelled.')
                 return redirect('my_properties_page')
     elif status == 'REJECTED':
         messages.error(request, 'You can not report a buyer without having a PENDING contract.')
+        return redirect('my_properties_page')
+    elif status == 'CANCELLED':
+        messages.error(request, 'Transaction has already been cancelled and the buyer was reported.')
         return redirect('my_properties_page')
 
 def reported_buyers_list(request):
