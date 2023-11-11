@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, reverse
-from .models import AppUser, Property, PropertyApplications, Property_Transfer_Contract, RentalsContract, OTP
+from .models import AppUser, Property, PropertyApplications, Property_Transfer_Contract, RentalsContract, OTP, ReportedBuyer
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib import messages
 from django.http import JsonResponse
@@ -1608,7 +1608,7 @@ def verify_contract(request):
                 # Invalid Contract/Token.
                 messages.error(request, "Token is INVALID")
                 return redirect('verify_contract_page')
-        except ObjectDoesNotExist:
+        except PropertyApplications.DoesNotExist:
             # No such application exists:
             messages.error(request, "No such application exists.")
             return render(request, 'verify_contract.html')
@@ -1739,17 +1739,27 @@ def report_malicious_buyer(request, id):
         messages.error(request, 'Can not report a buyer once the contract has been completed.')
         return redirect('my_properties_page')
     elif status == 'ACCEPTED':
-        date_of_agreement = None
-        if currentApplication.application_type == 'RENT':
-            date_of_agreement = RentalsContract.objects.get(application_id = id).date_of_agreement
-        else:
-            date_of_agreement = Property_Transfer_Contract.objects.get(application_id = id).date_of_agreement
-        if timezone.now().date() - date_of_agreement <= timedelta(days = 2):
-            messages.info(request, 'You can not report a buyer before 2 days has been passed after agreement.')
+        # Check if already reported.
+        try:
+            previous_record = ReportedBuyer.objects.get(application_id = id)
+            messages.info(request, f'You have already reported {currentApplication.interested_user} .')
             return redirect('my_properties_page')
-        else:
-            messages.success(request, f'The buyer with the username {buyer} has been reported to the admin.')
-            return redirect('my_properties_page')
+        except ReportedBuyer.DoesNotExist:
+            # Reporting the buyer for the first time.
+            date_of_agreement = None
+            if currentApplication.application_type == 'RENT':
+                date_of_agreement = RentalsContract.objects.get(application_id = id).date_of_agreement
+            else:
+                date_of_agreement = Property_Transfer_Contract.objects.get(application_id = id).date_of_agreement
+            if timezone.now().date() - date_of_agreement < timedelta(days = 2):
+                messages.info(request, 'You can not report a buyer before 2 days has been passed after agreement.')
+                return redirect('my_properties_page')
+            else:
+                # Create a new report object.
+                new_report = ReportedBuyer.objects.create(application_id = id, buyer = currentApplication.interested_user, seller = username)
+                new_report.save()
+                messages.success(request, f'The buyer with the username {buyer} has been reported to the admin.')
+                return redirect('my_properties_page')
     elif status == 'REJECTED':
         messages.error(request, 'You can not report a buyer without having a PENDING contract.')
         return redirect('my_properties_page')

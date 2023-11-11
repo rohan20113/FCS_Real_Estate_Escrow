@@ -98,3 +98,8 @@ class OTP(models.Model):
     otp = models.CharField(max_length=6)
     expiry_time = models.DateTimeField()
     valid = models.BooleanField()
+
+class ReportedBuyer(models.Model):
+    application_id = models.DecimalField(decimal_places=0, max_digits=10, null = False, blank = False, default = False)
+    buyer = models.CharField(max_length=30,  null= False, blank=False, default = False)
+    seller = models.CharField(max_length=30,  null= False, blank=False, default = False)
