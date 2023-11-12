@@ -88,7 +88,11 @@
         }
 
         .go-to-dashboard-button:hover {
-            background-color: #1e6aae;
+            background-color: #000000;
+        }
+
+        .submit-button:hover{
+            background-color: #000000;
         }
     </style>
 </head>
@@ -104,7 +108,7 @@
             <input type="number" id="application_id" name="application_id" min="1" step="1" required>
             <label for="token">Token String (without spaces):</label>
             <input type="text" id="token" name="token" pattern="^\S*$" required>
-            <button type="submit" style="text-align: center; ">Verify</button>
+            <button type="submit" class = "submit-button" style="text-align: center; ">Verify</button>
         </form>
         <div class="message-container">
             {% if messages %}

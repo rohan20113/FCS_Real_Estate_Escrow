@@ -75,8 +75,8 @@
             text-align: center;
         }
 
-        .go-to-dashboard-button:hover {
-            background-color: #1e6aae;
+        .go-to-dashboard-button:hover, .submit-button:hover {
+            background-color: #000000;
         }
     </style>
 </head>
@@ -116,7 +116,7 @@
             </div>
             
             <br></br>
-            <button id = 'submitButton' type="submit" style="text-align: center;  margin-top: 10px; margin-left: 75px;">SAVE</button>
+            <button id = 'submitButton' type="submit" class = "submit-button" style="text-align: center;  margin-top: 10px; margin-left: 75px;">SAVE</button>
         </form>
         <div class="message-container">
             {% if messages %}

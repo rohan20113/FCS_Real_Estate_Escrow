@@ -76,6 +76,19 @@
             color: #f80788; 
             text-align: center;
         }
+
+        .developers {
+            border: 1px solid black;
+            background-color: white;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .signup-button:hover, .login-button:hover {
+            background-color: #000000;
+        }
+
     </style>
 </head>
 <body>
@@ -90,14 +103,14 @@
             <label for="password">Password:</label>
             <input type="password" id="password" name="password" required>
 
-            <button type="submit">Login</button>
-            <button type="button" onclick="window.location.href='/signup'">Sign Up</button>
+            <button type="submit" class="login-button">Login</button>
+            <button type="button" class="signup-button" onclick="window.location.href='/signup'">Sign Up</button>
         </form>
         <div class="message-container">
             {% if messages %}
                 <ul class="messages">
                     {% for message in messages %}
-                    <li{% if "success" in message.tags %} class="messages-success"{% elif "error" in message.tags %} class="messages-error" {% elif "info" in message.tags %} class="messages-info"{% endif %}>{{ message }}</li>
+                        <li style="list-style-type: none; text-align: left;" {% if "success" in message.tags %} class="messages-success"{% elif "error" in message.tags %} class="messages-error" {% elif "info" in message.tags %} class="messages-info"{% endif %}>{{ message }}</li>
                     {% endfor %}
                 </ul>
             {% endif %}
