@@ -276,6 +276,7 @@
                         <th>Price (in ₹)</th>
                         <th>Facilities</th>
                         <th>Action</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -293,6 +294,9 @@
                         <td>{{ property.facilities }}</td>
                         <td>
                             <a id = 'action_available' href="/apply_property_deal/{{property.id}}">Apply</a>
+                        </td>
+                        <td>
+                            <a id = 'action_available' href="/report_listing/{{property.id}}">Report</a>
                         </td>
                     </tr>
                     {% endfor %}

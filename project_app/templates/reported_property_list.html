@@ -1,0 +1,156 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+            height: fit-content;
+            width: fit-content;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 25px;
+            margin-left:100px;
+            padding: 20px;
+            border: 2px solid #3498db;
+            background-color: #fff;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #3498db;
+            padding: 10px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .navbar h2 {
+            color: #fff;
+            margin: 0;
+        }
+
+        .navbar-buttons {
+            display: flex;
+            align-items: center;
+        }
+
+        .dashboard-button{
+            background-color: #0d14d4;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+
+        .logout-button {
+            background-color: #d40d0d;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+
+
+        .dashboard-button:hover,
+        .logout-button:hover {
+            background-color: #000000;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #3498db;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #3498db;
+            color: #fff;
+        }
+        .messages-success {
+            background-color: #c8f7c5; 
+            color: #009900; 
+            text-align: center;
+        }
+
+        .messages-error {
+            background-color: #fcc9c9; 
+            color: #ff0000; 
+            text-align: center;
+        }
+
+        .messages-info {
+            background-color: #fff; 
+            color: #f80788; 
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <h2>Reported Listings</h2>
+            <a class="dashboard-button" href="/admin_dashboard">Dashboard</a>
+            <a class="logout-button" href="/logout">Logout</a>
+        </div>
+        <div class="message-container">
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li{% if "success" in message.tags %} class="messages-success"{% elif "error" in message.tags %} class="messages-error" {% elif "info" in message.tags %} class="messages-info"{% endif %}>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Property ID</th>
+                    <th>Reported By</th>
+                    <th>Complain ID</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.property_id }}</td>
+                    <td>{{ report.reporter }}</td>
+                    <td>{{ report.complain_id }}</td>
+                    <td>
+                        <a href="/ban_property/{{report.property_id}}">
+                            <img src ="{% static 'ban_sale.jpg' %}" alt="Edit Property">
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

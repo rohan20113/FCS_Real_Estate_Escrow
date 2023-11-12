@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, reverse
-from .models import AppUser, Property, PropertyApplications, Property_Transfer_Contract, RentalsContract, OTP, ReportedBuyer
+from .models import AppUser, Property, PropertyApplications, Property_Transfer_Contract, RentalsContract, OTP, ReportedBuyer, ReportedListing
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib import messages
 from django.http import JsonResponse
@@ -463,6 +463,10 @@ def edit_property(request, id = id):
     if(property.type == 'DELETED'):
         messages.error(request, "THIS PROPERTY WAS DELETED.")
         return redirect('my_properties_page')
+    
+    if(property.type == 'BANNED'):
+        messages.error(request, "You can not modify a BANNED listing.")
+        return redirect('my_properties_page')
 
     if(property.type == 'ON LEASE'):
         # Calculating the expiration of the lease contract.
@@ -483,6 +487,10 @@ def update_property(request, id):
         return redirect('logout_page')
     if(property.type == 'DELETED'):
         messages.error(request, "THIS PROPERTY WAS DELETED.")
+        return redirect('my_properties_page')
+    
+    if(property.type == 'BANNED'):
+        messages.error(request, "You can not modify a BANNED listing.")
         return redirect('my_properties_page')
     
     if(property.type == 'ON LEASE'):
@@ -571,6 +579,11 @@ def delete_property(request, id):
     if property.type == 'ON LEASE':
         messages.error(request, 'You can not delete a property ON LEASE.')
         return redirect('my_properties_page')
+    
+    if property.type == 'BANNED':
+        messages.error(request, 'You can not delete a BANNED listing.')
+        return redirect('my_properties_page')
+    
     # property.delete()
     property.type = 'DELETED'
     property.save()
@@ -588,6 +601,7 @@ def apply_property_deal(request, id):
         return redirect('/login')
     property_selected = Property.objects.get(id=id)
     if property_selected.type not in ['SELL', 'RENT']:
+        messages.info(request, 'Invalid application.')
         return redirect('logout_page')
     if property_selected.owner == username:
         return redirect('logout_page')
@@ -629,6 +643,10 @@ def display_property_applications(request, id):
 
     if property.type == 'ON LEASE':
         messages.error(request, 'No applications are allowed for a property ON LEASE.')
+        return redirect('my_properties_page')
+    
+    if(property.type == 'BANNED'):
+        messages.error(request, "No transactions allowed for a BANNED listing.")
         return redirect('my_properties_page')
 
     # accepted_applications = PropertyApplications.objects.filter(property_id=id, status='ACCEPTED')
@@ -1756,8 +1774,8 @@ def report_malicious_buyer(request, id):
                 date_of_agreement = RentalsContract.objects.get(application_id = id).date_of_agreement
             else:
                 date_of_agreement = Property_Transfer_Contract.objects.get(application_id = id).date_of_agreement
-            if timezone.now().date() - date_of_agreement < timedelta(days = 2):
-                messages.info(request, 'You can not report a buyer within 2 immediate days after agreement.')
+            if timezone.now().date() - date_of_agreement < timedelta(days = 5):
+                messages.info(request, 'You can not report a buyer within 5 immediate days after agreement.')
                 return redirect('my_properties_page')
             else:
                 # Create a new report object.
@@ -1785,3 +1803,69 @@ def reported_buyers_list(request):
     
     # Still need to add logic for only admin to be able to access it. (optional)
     return render(request, 'reported_buyer.html', context = {'reports': ReportedBuyer.objects.all()})
+
+def reported_property_list(request):
+    username = request.session.get('username')
+    if(request.session.get('email_kyc') is None):
+            return redirect('logout_page')
+    if(username is None):
+        return redirect('login_page')
+    
+    # Still need to add logic for only admin to be able to access it. (optional)
+    return render(request, 'reported_property_list.html', context = {'reports': ReportedListing.objects.all()})
+
+def report_listing(request, id):
+    username = request.session.get('username')
+    if(request.session.get('email_kyc') is None):
+            return redirect('logout_page')
+    if(username is None):
+        return redirect('login_page')
+    
+    if request.method == 'POST':
+        complain = None
+        complain_id = request.POST['complain_id']
+        if complain_id == 1:
+            # Seller is not the rightful owner.
+            complain = "Seller is not the RIGHTFUL owner."
+        elif complain_id == 2:
+            # Listed property doesn't exist.
+            complain = "Listed Property do NOT exist."
+        elif complain_id == 3:
+            complain = "Multiple Transactions detected for the same listed property."
+        
+        try:
+            existing_report = ReportedListing.objects.get(property_id = id, reporter = username)
+            messages.info(request, 'You can only report once per listing')
+            return redirect('search_properties_page')
+        except ReportedListing.DoesNotExist:
+            # Create a report object for the listed property.
+            new_report = ReportedListing.objects.create(property_id = id, complain_id = complain_id, reporter = username)
+            new_report.save()
+            messages.success(request, 'The listed property has been reported to the admin.')
+            return redirect('search_properties_page')
+    else:
+        # Get request
+        currentProperty = Property.objects.get(id = id)
+        if currentProperty.owner == username:
+            messages.error(request, 'You can not report your own property')
+            return redirect('search_properties_page')
+        
+        return render(request, 'report_listing.html', {'id': id})
+    
+def ban_property(request, id):
+    username = request.session.get('username')
+    if(request.session.get('email_kyc') is None):
+            return redirect('logout_page')
+    if(username is None):
+        return redirect('login_page')
+    
+    if username not in ['chirag20047']:
+        messages.error(request, "Unauthorized Acces Detected. Report Sent. Ekyc access may be revoked for this account.")
+        return redirect('logout_page')
+    
+    currentProperty = Property.objects.get(id = id)
+    currentProperty.type = 'BANNED'
+    currentProperty.save()
+
+    messages.success(request, 'Successfully banned the listing.')
+    return redirect('reported_property_list_page')
