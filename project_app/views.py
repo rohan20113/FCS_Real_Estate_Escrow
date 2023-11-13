@@ -242,7 +242,7 @@ def ekyc(request):
         }
         if email_input not in ["chirag20047@iiitd.ac.in",
                                 "rohan20113@iiitd.ac.in",
-                                # "pathik20095@iiitd.ac.in"
+                                "pathik20095@iiitd.ac.in"
                                 ]:
             messages.info(request, "UNDER MAINTAINANCE, ONLY DEVELOPERS ARE ALLOWED")
             return redirect('ekyc_page')
