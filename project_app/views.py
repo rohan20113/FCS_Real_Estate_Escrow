@@ -14,14 +14,41 @@ from django.core.mail import send_mail
 from django.utils import timezone
 
 
+def valid_email(str):
+    allowed_characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*.'
+    for i in str:
+        if i not in allowed_characters:
+            return False
+    
+    if '@' not in str or '.' not in str:
+        return False
+    return True
+
+# Validate an output
+def valid_text(str):
+    allowed_characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
+    for i in str:
+        if i not in allowed_characters:
+            return False
+    return True
+
 # Create your views here.
 # @csrf_exempt
 def login_user(request):
     if(request.session.get('email_kyc') is None):
         return redirect('logout_page')
+    
+    if request.session.get('username') is not None:
+        return redirect('dashboard_page')
+    
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
+
+        # Validating the input. 
+        if (valid_text(username) ==False or valid_text(password) == False):
+            messages.error(request, "Please enter fields in valid format.")
+            return redirect('login_page')
         # Calculating the hash
         hash = hashlib.sha256()
         hash.update(password.encode())
@@ -63,7 +90,14 @@ def login_user(request):
                 return redirect('login_page')
     else:
         return render(request, 'login.html')
-    
+
+def valid_num(contact):
+    digits = "0123456789"
+    for i in contact:
+        if i not in digits:
+            return False
+    return True
+
 # @csrf_exempt
 def register_user(request):
     if(request.session.get('email_kyc') is None):
@@ -77,6 +111,16 @@ def register_user(request):
         input_password = request.POST['password']
         input_confirm_password = request.POST['confirm_password']
         if input_password==input_confirm_password:
+            # Input Validation: 
+            if(valid_text(input_first_name) == False or valid_text(input_last_name)==False or valid_text(input_username) == False or valid_num(input_contact) == False or valid_text(input_password) == False):
+                messages.error(request, 'Please follow valid input format.')
+                return redirect('signup_page')
+            if(len(input_first_name) == 0 or len(input_username) == 0 or len(input_first_name) > 30 or len(input_last_name) > 30 or len(input_username) > 30  or len(input_contact)!= 10 ):
+                messages.error(request, 'Please adhere to the characters length for input fields.')
+                return redirect('signup_page')
+            if(len(input_password) <= 5 or len(input_password) > 30):
+                messages.info(request, 'Passwords should be in the range of [6,30] characters (both inclusive).')
+                return redirect('signup_page')
             # Passwords matched
             if AppUser.objects.filter(username=input_username).exists():
                 messages.error(request, 'Username already EXISTS.')
@@ -88,13 +132,17 @@ def register_user(request):
                 hash = hashlib.sha256()
                 hash.update(input_password.encode())
                 input_password = hash.hexdigest()
-                user = AppUser.objects.create(username=input_username, password=input_password, 
-                                        email=request.session.get('email_kyc'), first_name=input_first_name, second_name=input_last_name, contact=input_contact, balance = 10000000, public_key = None)
-                user.save()
-                # Obtaining the user's id.
-                user_id = user.id
-                # print("ID:", user_id)
-                return redirect('user_mail_verification_page', id = user_id)
+                try:
+                    user = AppUser.objects.create(username=input_username, password=input_password, 
+                                            email=request.session.get('email_kyc'), first_name=input_first_name, second_name=input_last_name, contact=input_contact, balance = 10000000, public_key = None, dv = False)
+                    user.save()
+                    # Obtaining the user's id.
+                    user_id = user.id
+                    # print("ID:", user_id)
+                    return redirect('user_mail_verification_page', id = user_id)
+                except:
+                    messages.error(request, 'Unexpected error because of invalid format.')
+                    return redirect('signup_page')
         # Passwords unmatched.
         else:
             messages.error(request, 'Passwords UNMATCHED')
@@ -113,30 +161,49 @@ def user_mail_verification(request, id):
             return redirect('dashboard_page')
         else:
             return redirect('login_page')
-    
+        
+    try:
+        if (type(id) == int):
+            pass
+    except:
+        messages.info(request, 'Invalid Request')
+        return redirect('login_page')
+
     if (request.session.get('otp_verification') == id):
         return redirect('user_document_verification_page', id = id)
     
     if request.method == 'POST':
         otp = request.POST['otp']
-        otp_object = OTP.objects.get(user = AppUser.objects.get(id = id).username)
-        if otp_object.valid == False:
-            messages.error(request, 'OTP already used before in some old transaction.')
-            return redirect('user_mail_verification_page', id =id)
-        if otp_object.expiry_time < timezone.now():
-            messages.error(request, 'OTP expired. Please check your mail again.')
-            return redirect('user_mail_verification_page', id =id)
-        if otp != otp_object.otp:
-            messages.error(request, 'OTP did not match.')
-            return redirect('user_mail_verification_page', id =id)
-        request.session['otp_verification'] = id
-        # OTP matched. 
-        messages.success(request, 'OTP Verification Successful.')
-        return redirect('user_document_verification_page', id= id)
+        # Input Validation:
+        if(len(otp) != 6 or valid_num(otp) == False):
+            messages.error(request, 'Invalid format (length/characters) of OTP.')
+            return redirect('user_mail_verification_page', id= id)
+        try:
+            otp_object = OTP.objects.get(user = AppUser.objects.get(id = id).username)
+            if otp_object.valid == False:
+                messages.error(request, 'OTP already used before in some old transaction.')
+                return redirect('user_mail_verification_page', id =id)
+            if otp_object.expiry_time < timezone.now():
+                messages.error(request, 'OTP expired. Please check your mail again.')
+                return redirect('user_mail_verification_page', id =id)
+            if otp != otp_object.otp:
+                messages.error(request, 'OTP did not match.')
+                return redirect('user_mail_verification_page', id =id)
+            request.session['otp_verification'] = id
+            # OTP matched. 
+            messages.success(request, 'OTP Verification Successful.')
+            return redirect('user_document_verification_page', id= id)
+        except:
+            messages.error(request, 'Invalid Request. Please Try Again Later.')
+            return redirect('user_mail_verification_page', id = id)
     elif request.method == 'GET':
-        generateOtpEmail(AppUser.objects.get(id = id).username)
-        messages.info(request, f'OTP has been sent to {current_user.email}.')
-        return render(request, 'user_mail_verification.html')
+        try:
+            generateOtpEmail(AppUser.objects.get(id = id).username)
+            messages.info(request, f'OTP has been sent to {current_user.email}.')
+            return render(request, 'user_mail_verification.html')
+        except:
+            messages.info(request, 'Unexpected Error')
+            return redirect('login_page')
 
 def user_document_verification(request, id):
     if(request.session.get('email_kyc') is None):
@@ -235,6 +302,10 @@ def ekyc(request):
     if request.method == 'POST':
         email_input = request.POST['email'].lower()
         password_input = request.POST['password']
+        if(valid_email(email_input) == False  or valid_text(password_input) == False):
+            # print(valid_email(email_input), valid_text(password_input))
+            messages.error(request, 'Please follow proper input format.')
+            return redirect('ekyc_page')
         # print(type(email_input))
         dictionary = {
             "email": email_input,
@@ -283,8 +354,8 @@ def dashboard_admin(request):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
-    if(username is None):
-        return redirect('login_page')
+    if(username is None or username not in ['chirag20047']):
+        return redirect('logout_page')
     if request.method == "POST":
         username = request.session.get('username')
         # print(username)
@@ -299,12 +370,16 @@ def dashboard_admin(request):
         if(username is None):
             return redirect('/login') 
         current_user = []
-        users = AppUser.objects.all()
-        for x in users:
-            if x.username == username:
-                current_user = x
-                break
-        return render(request, 'admin_dashboard.html', {'user': current_user}) 
+        try:
+            users = AppUser.objects.all()
+            for x in users:
+                if x.username == username:
+                    current_user = x
+                    break
+            return render(request, 'admin_dashboard.html', {'user': current_user}) 
+        except:
+            messages.info(request, 'Unexpected Error(da)')
+            return redirect('logout_page')
 
 # @login_required
 def dashboard_user(request):
@@ -318,26 +393,31 @@ def dashboard_user(request):
         # return redirect('/')
         pass
     else:
-        username = request.session.get('username')
-        if(request.session.get('email_kyc') is None):
-            return redirect('logout_page')
-        if(username is None):
-            return redirect('/login')
-        # print(username)
-        current_user = []
-        users = AppUser.objects.all()
-        for x in users:
-            if x.username == username:
-                current_user = x
-                break
-        return render(request, 'dashboard.html', {'user': current_user})
+        try:
+            username = request.session.get('username')
+            if(request.session.get('email_kyc') is None):
+                return redirect('logout_page')
+            if(username is None):
+                return redirect('/login')
+            # print(username)
+            current_user = []
+            users = AppUser.objects.all()
+            for x in users:
+                if x.username == username:
+                    current_user = x
+                    break
+            return render(request, 'dashboard.html', {'user': current_user})
+        
+        except:
+                messages.info(request, 'Unexpected Error(du)')
+                return redirect('logout_page')
         
 def dashboard_user_list(request):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None):
+    if(request.session.get('email_kyc') is None or request.session.get('email_kyc').lower() != 'chirag20047@iiitd.ac.in'):
             return redirect('logout_page')
-    if(username is None):
-        return redirect('/login')
+    if(username is None or username not in ['chirag20047']):
+        return redirect('logout_page')
     users = list(AppUser.objects.values())
     user_list = []
     for i in range(len(users)):

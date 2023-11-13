@@ -1,9 +1,10 @@
 from django.db import models
 from django.core.validators import MaxValueValidator
+from django.core.validators import MaxLengthValidator
 
 # Create your models here.
 class AppUser(models.Model):
-    first_name = models.CharField(max_length=30, null= False, blank=False, default = None)
+    first_name = models.CharField(max_length=30, null= False, blank=False, default = None, validators=[MaxLengthValidator(limit_value=30, message="First name must be at most 30 characters.")])
     second_name = models.CharField(max_length=30, default= None)
     username = models.CharField(max_length=30, null= False, blank=False, default = None)
     password = models.CharField(max_length=256, null= False, blank=False, default = None)
