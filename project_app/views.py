@@ -1818,72 +1818,76 @@ def view_contract(request, id):
     if(username is None):
         return redirect('login_page')
     
-    current_application = PropertyApplications.objects.get(id = id)
-    # Unauthorized access.
-    if(username != current_application.interested_user and username != current_application.property_owner):
-        return redirect('logout_page')
-    
-    if(current_application.application_type == 'RENT'):
-        # Rental Contract
-        if username == current_application.interested_user:
-            rentalsContract = RentalsContract.objects.get(application_id = id, party_type = 'lessee')
-            # Lessee
-            return render(request, 'rentals_contract.html', {
-                'current_application_id': id,
-                'party_name': rentalsContract.first_name + " " + rentalsContract.second_name,
-                'party_username': rentalsContract.username,
-                'party_type': rentalsContract.party_type,
-                'property_id': rentalsContract.property_id,
-                'property_address': rentalsContract.property_address_line_1 + " " + rentalsContract.property_address_line_2,
-                'city': rentalsContract.property_city,
-                'state': rentalsContract.property_state,
-                'pincode': rentalsContract.property_pincode,
-                'duration': rentalsContract.duration,
-                'price_pm': rentalsContract.rent_per_month,
-                'contract_value': rentalsContract.total_rent,
-                'date_of_agreement': rentalsContract.date_of_agreement,
-                'token': rentalsContract.token,
-            })
+    try:
+        current_application = PropertyApplications.objects.get(id = id)
+        # Unauthorized access.
+        if(username != current_application.interested_user and username != current_application.property_owner):
+            return redirect('logout_page')
+        
+        if(current_application.application_type == 'RENT'):
+            # Rental Contract
+            if username == current_application.interested_user:
+                rentalsContract = RentalsContract.objects.get(application_id = id, party_type = 'lessee')
+                # Lessee
+                return render(request, 'rentals_contract.html', {
+                    'current_application_id': id,
+                    'party_name': rentalsContract.first_name + " " + rentalsContract.second_name,
+                    'party_username': rentalsContract.username,
+                    'party_type': rentalsContract.party_type,
+                    'property_id': rentalsContract.property_id,
+                    'property_address': rentalsContract.property_address_line_1 + " " + rentalsContract.property_address_line_2,
+                    'city': rentalsContract.property_city,
+                    'state': rentalsContract.property_state,
+                    'pincode': rentalsContract.property_pincode,
+                    'duration': rentalsContract.duration,
+                    'price_pm': rentalsContract.rent_per_month,
+                    'contract_value': rentalsContract.total_rent,
+                    'date_of_agreement': rentalsContract.date_of_agreement,
+                    'token': rentalsContract.token,
+                })
+            else:
+                # Lessor
+                rentalsContract = RentalsContract.objects.get(application_id = id, party_type = 'lessor')
+                return render(request, 'rentals_contract.html', {
+                    'current_application_id': id,
+                    'party_name': rentalsContract.first_name + " " + rentalsContract.second_name,
+                    'party_username': rentalsContract.username,
+                    'party_type': rentalsContract.party_type,
+                    'property_id': rentalsContract.property_id,
+                    'property_address': rentalsContract.property_address_line_1 + " " + rentalsContract.property_address_line_2,
+                    'city': rentalsContract.property_city,
+                    'state': rentalsContract.property_state,
+                    'pincode': rentalsContract.property_pincode,
+                    'duration': rentalsContract.duration,
+                    'price_pm': rentalsContract.rent_per_month,
+                    'contract_value': rentalsContract.total_rent,
+                    'date_of_agreement': rentalsContract.date_of_agreement,
+                    'token': rentalsContract.token,
+                })
         else:
-            # Lessor
-            rentalsContract = RentalsContract.objects.get(application_id = id, party_type = 'lessor')
-            return render(request, 'rentals_contract.html', {
+            # Buy/Sell contract -> Single Contract exists & hence, we don't need to check what to show.
+            transferContract = Property_Transfer_Contract.objects.get(application_id = id)
+            # print(transferContract.application_id)
+            # print(id)
+            # print(current_application.id)
+            return render(request, 'property_transfer_contract.html', {
                 'current_application_id': id,
-                'party_name': rentalsContract.first_name + " " + rentalsContract.second_name,
-                'party_username': rentalsContract.username,
-                'party_type': rentalsContract.party_type,
-                'property_id': rentalsContract.property_id,
-                'property_address': rentalsContract.property_address_line_1 + " " + rentalsContract.property_address_line_2,
-                'city': rentalsContract.property_city,
-                'state': rentalsContract.property_state,
-                'pincode': rentalsContract.property_pincode,
-                'duration': rentalsContract.duration,
-                'price_pm': rentalsContract.rent_per_month,
-                'contract_value': rentalsContract.total_rent,
-                'date_of_agreement': rentalsContract.date_of_agreement,
-                'token': rentalsContract.token,
+                'buyer_username': transferContract.buyer,
+                'buyer_name': transferContract.first_name_buyer + " " + transferContract.second_name_buyer,
+                'seller_username': transferContract.seller,
+                'seller_name': transferContract.first_name_seller + " " + transferContract.second_name_seller,
+                'property_id': transferContract.property_id,
+                'property_address': transferContract.property_address_line_1 + " " + transferContract.property_address_line_2,
+                'city': transferContract.property_city,
+                'state': transferContract.property_state,
+                'pincode': transferContract.property_pincode,
+                'contract_value': transferContract.price,
+                'date_of_agreement': transferContract.date_of_agreement,
+                'token': transferContract.token,
             })
-    else:
-        # Buy/Sell contract -> Single Contract exists & hence, we don't need to check what to show.
-        transferContract = Property_Transfer_Contract.objects.get(application_id = id)
-        # print(transferContract.application_id)
-        # print(id)
-        # print(current_application.id)
-        return render(request, 'property_transfer_contract.html', {
-            'current_application_id': id,
-            'buyer_username': transferContract.buyer,
-            'buyer_name': transferContract.first_name_buyer + " " + transferContract.second_name_buyer,
-            'seller_username': transferContract.seller,
-            'seller_name': transferContract.first_name_seller + " " + transferContract.second_name_seller,
-            'property_id': transferContract.property_id,
-            'property_address': transferContract.property_address_line_1 + " " + transferContract.property_address_line_2,
-            'city': transferContract.property_city,
-            'state': transferContract.property_state,
-            'pincode': transferContract.property_pincode,
-            'contract_value': transferContract.price,
-            'date_of_agreement': transferContract.date_of_agreement,
-            'token': transferContract.token,
-        })
+    except:
+        messages.error(request, 'Unexpected Error in displaying the contract.')
+        return redirect('dashboard_page')
 
 def verify_contract(request):
     username = request.session.get('username')
@@ -1896,7 +1900,11 @@ def verify_contract(request):
     if request.method == 'POST':
         application_id = request.POST['application_id']
         token = request.POST['token']
-        
+        # Input validation.
+        if (valid_num(application_id) == False or len(application_id) == 0 or len(token) == 0):
+            messages.error(request, 'Invalid Input.')
+            return redirect('verify_contract_page')
+
         # Fetching the corresponding application: 
         try:
             current_application = PropertyApplications.objects.get(id = application_id)
@@ -1951,6 +1959,20 @@ def edit_profile(request):
             # Checking for password.
             password = request.POST['newPassword']
             confirmPassword = request.POST['confirmPassword']
+
+            # Input Validation:
+            if(valid_num(contact) == False or len(contact) != 10 or valid_num(balance) == False or int(balance) <0 or int(balance) > 100000000000 ):
+                messages.error(request, 'Invalid input format')
+                return redirect('edit_profile_page')
+            
+            if ( password != '' and (valid_text(password) == False or len(password) < 5 or len(password) > 30)):
+                messages.error(request, 'Invalid password format.')
+                return redirect('edit_profile_page')
+            
+            if( confirmPassword != '' and (valid_text(confirmPassword) == False or password != confirmPassword)):
+                messages.error(request, 'Invalid password/confirm-password format.')
+                return redirect('edit_profile_page')
+
             if(password == ''):
                 current_user = AppUser.objects.get(username = username)
                 current_user.balance = balance
@@ -1977,18 +1999,22 @@ def edit_profile(request):
                 messages.success(request, 'Profile & password have been updated successfully')
                 return redirect('login_page')
         except:
-            messages.error(request, "Please Try Again Later.")
+            messages.error(request, "Unexpected error while processing. Please Try Again Later.")
             return redirect('dashboard_page')
     else:
         # GET request.
-        current_user = AppUser.objects.get(username = username)
-        return render(request, 'edit_profile.html', {
-            'username': username,
-            'full_name': current_user.first_name + " " + current_user.second_name,
-            'email_address': current_user.email,
-            'contact_number': current_user.contact,
-            'balance': current_user.balance
-        })
+        try:
+            current_user = AppUser.objects.get(username = username)
+            return render(request, 'edit_profile.html', {
+                'username': username,
+                'full_name': current_user.first_name + " " + current_user.second_name,
+                'email_address': current_user.email,
+                'contact_number': current_user.contact,
+                'balance': current_user.balance
+            })
+        except:
+            messages.error(request, 'Unexpected error while extracting user detials. Please Try Again Later.')
+            return redirect('dashboard_page')
     
 def transaction_ekyc(request, id):
     username = request.session.get('username')
@@ -1999,41 +2025,50 @@ def transaction_ekyc(request, id):
     if(username is None):
         return redirect('login_page')
     
-    if request.method == 'POST':
-        email_input = request.POST['email'].lower()
-        password_input = request.POST['password']
-        # print(type(email_input))
-        dictionary = {
-            "email": email_input,
-            "password":password_input
-        }
-        # print(email_input, password_input)
-        # Will call the API here and set the flag accordingly.
-        try:
-            api_response = requests.post('https://192.168.3.39:5000/kyc', json = dictionary, verify= False)
-            if api_response.status_code == 200:
-                response_data = api_response.json()
-                if(response_data.get('status') == 'success'):
-                    # messages.success(request, 'Verification Successful!')
-                    # Checking type of application and redirecting the user.
-                    current_application = PropertyApplications.objects.get(id = id)
-                    request.session['transaction_ekyc'] = id
-                    if current_application.application_type == 'RENT':
-                        return redirect('rentals_payment_gateway_page', id= id)
-                    else:
-                        return redirect('payment_gateway_page', id = id)
-                elif response_data.get('status') == 'error':
-                    messages.error(request, response_data.get('message'))
-                    return redirect('transaction_ekyc_page', id = id)
-            else:
-                messages.error(request, 'Error Code: {api_response.stat  us_code}')
+    try:
+        if request.method == 'POST':
+            email_input = request.POST['email'].lower()
+            password_input = request.POST['password']
+            # Input validation.
+            if(valid_email(email_input) == False  or valid_text(password_input) == False):
+                # print(valid_email(email_input), valid_text(password_input))
+                messages.error(request, 'Invalid Input Format.')
                 return redirect('transaction_ekyc_page', id = id)
-        except requests.exceptions.RequestException as e:
-            messages.error(request, 'PLEASE TRY AGAIN LATER')
-            return redirect('transaction_ekyc_page', id = id)
-    else:
-        # GET Request.
-        return render(request, 'transaction_ekyc.html', {'id': id})
+            # print(type(email_input))
+            dictionary = {
+                "email": email_input,
+                "password":password_input
+            }
+            # print(email_input, password_input)
+            # Will call the API here and set the flag accordingly.
+            try:
+                api_response = requests.post('https://192.168.3.39:5000/kyc', json = dictionary, verify= False)
+                if api_response.status_code == 200:
+                    response_data = api_response.json()
+                    if(response_data.get('status') == 'success'):
+                        # messages.success(request, 'Verification Successful!')
+                        # Checking type of application and redirecting the user.
+                        current_application = PropertyApplications.objects.get(id = id)
+                        request.session['transaction_ekyc'] = id
+                        if current_application.application_type == 'RENT':
+                            return redirect('rentals_payment_gateway_page', id= id)
+                        else:
+                            return redirect('payment_gateway_page', id = id)
+                    elif response_data.get('status') == 'error':
+                        messages.error(request, response_data.get('message'))
+                        return redirect('transaction_ekyc_page', id = id)
+                else:
+                    messages.error(request, 'Error Code: {api_response.stat  us_code}')
+                    return redirect('transaction_ekyc_page', id = id)
+            except requests.exceptions.RequestException as e:
+                messages.error(request, 'PLEASE TRY AGAIN LATER')
+                return redirect('transaction_ekyc_page', id = id)
+        else:
+            # GET Request.
+            return render(request, 'transaction_ekyc.html', {'id': id})
+    except:
+        messages.error(request, 'Unexpected Error. Please Try Again Later.')
+        return redirect('search_properties_page')
 
 def report_malicious_buyer(request, id):
     username = request.session.get('username')
@@ -2044,49 +2079,53 @@ def report_malicious_buyer(request, id):
     if(username is None):
         return redirect('login_page')
     
-    currentApplication = PropertyApplications.objects.get(id = id)
-    buyer = currentApplication.interested_user
-    if currentApplication.property_owner != username:
-        messages.error(request, 'You can not report a buyer in an application where you are not the property owner.')
-        return redirect('my_properties_page')
-    status = currentApplication.status
-    if status == 'PENDING':
-        messages.error(request, 'Can not report a buyer without a valid contract in progress')
-        return redirect('my_properties_page')
-    elif status == 'SUCCESS':
-        messages.error(request, 'Can not report a buyer once the contract has been completed.')
-        return redirect('my_properties_page')
-    elif status == 'ACCEPTED':
-        # Check if already reported.
-        try:
-            previous_record = ReportedBuyer.objects.get(application_id = id)
-            messages.info(request, f'You have already reported the user: {currentApplication.interested_user} .')
+    try:
+        currentApplication = PropertyApplications.objects.get(id = id)
+        buyer = currentApplication.interested_user
+        if currentApplication.property_owner != username:
+            messages.error(request, 'You can not report a buyer in an application where you are not the property owner.')
             return redirect('my_properties_page')
-        except ReportedBuyer.DoesNotExist:
-            # Reporting the buyer for the first time.
-            date_of_agreement = None
-            if currentApplication.application_type == 'RENT':
-                date_of_agreement = RentalsContract.objects.get(application_id = id).date_of_agreement
-            else:
-                date_of_agreement = Property_Transfer_Contract.objects.get(application_id = id).date_of_agreement
-            if timezone.now().date() - date_of_agreement < timedelta(days = 5):
-                messages.info(request, 'You can not report a buyer within 5 immediate days after agreement.')
+        status = currentApplication.status
+        if status == 'PENDING':
+            messages.error(request, 'Can not report a buyer without a valid contract in progress')
+            return redirect('my_properties_page')
+        elif status == 'SUCCESS':
+            messages.error(request, 'Can not report a buyer once the contract has been completed.')
+            return redirect('my_properties_page')
+        elif status == 'ACCEPTED':
+            # Check if already reported.
+            try:
+                previous_record = ReportedBuyer.objects.get(application_id = id)
+                messages.info(request, f'You have already reported the user: {currentApplication.interested_user} .')
                 return redirect('my_properties_page')
-            else:
-                # Create a new report object.
-                new_report = ReportedBuyer.objects.create(application_id = id, buyer = currentApplication.interested_user, seller = username)
-                new_report.save()
+            except ReportedBuyer.DoesNotExist:
+                # Reporting the buyer for the first time.
+                date_of_agreement = None
+                if currentApplication.application_type == 'RENT':
+                    date_of_agreement = RentalsContract.objects.get(application_id = id).date_of_agreement
+                else:
+                    date_of_agreement = Property_Transfer_Contract.objects.get(application_id = id).date_of_agreement
+                if timezone.now().date() - date_of_agreement < timedelta(days = 5):
+                    messages.info(request, 'You can not report a buyer within 5 immediate days after agreement.')
+                    return redirect('my_properties_page')
+                else:
+                    # Create a new report object.
+                    new_report = ReportedBuyer.objects.create(application_id = id, buyer = currentApplication.interested_user, seller = username)
+                    new_report.save()
 
-                # cancelling the transaction.
-                currentApplication.status = 'CANCELLED'
-                currentApplication.save()
-                messages.success(request, f'User {buyer} has been reported & Transaction has been cancelled.')
-                return redirect('my_properties_page')
-    elif status == 'REJECTED':
-        messages.error(request, 'You can not report a buyer without having a PENDING contract.')
-        return redirect('my_properties_page')
-    elif status == 'CANCELLED':
-        messages.error(request, 'Transaction has already been cancelled and the buyer was reported.')
+                    # cancelling the transaction.
+                    currentApplication.status = 'CANCELLED'
+                    currentApplication.save()
+                    messages.success(request, f'User {buyer} has been reported & Transaction has been cancelled.')
+                    return redirect('my_properties_page')
+        elif status == 'REJECTED':
+            messages.error(request, 'You can not report a buyer without having a PENDING contract.')
+            return redirect('my_properties_page')
+        elif status == 'CANCELLED':
+            messages.error(request, 'Transaction has already been cancelled and the buyer was reported.')
+            return redirect('my_properties_page')
+    except:
+        messages.error(request, 'Unexpected Error while processing the request.')
         return redirect('my_properties_page')
 
 def reported_buyers_list(request):
@@ -2106,8 +2145,14 @@ def reported_property_list(request):
     if(username is None):
         return redirect('login_page')
     
+    reports = list(ReportedListing.objects.values())
+    reportsList = []
+    for i in range(len(reports)):
+        property = Property.objects.get(id = reports[i]['property_id'])
+        if property.type != 'BANNED':
+            reportsList.append(reports[i])
     # Still need to add logic for only admin to be able to access it. (optional)
-    return render(request, 'reported_property_list.html', context = {'reports': ReportedListing.objects.all()})
+    return render(request, 'reported_property_list.html', context = {'reports': reportsList})
 
 def report_listing(request, id):
     username = request.session.get('username')
@@ -2116,37 +2161,45 @@ def report_listing(request, id):
     if(username is None):
         return redirect('login_page')
     
-    if request.method == 'POST':
-        complain = None
-        complain_id = request.POST['complain_id']
-        if complain_id == 1:
-            # Seller is not the rightful owner.
-            complain = "Seller is not the RIGHTFUL owner."
-        elif complain_id == 2:
-            # Listed property doesn't exist.
-            complain = "Listed Property do NOT exist."
-        elif complain_id == 3:
-            complain = "Multiple Transactions detected for the same listed property."
-        
-        try:
-            existing_report = ReportedListing.objects.get(property_id = id, reporter = username)
-            messages.info(request, 'You can only report once per listing')
-            return redirect('search_properties_page')
-        except ReportedListing.DoesNotExist:
-            # Create a report object for the listed property.
-            new_report = ReportedListing.objects.create(property_id = id, complain_id = complain_id, reporter = username)
-            new_report.save()
-            messages.success(request, 'The listed property has been reported to the admin.')
-            return redirect('search_properties_page')
-    else:
-        # Get request
-        currentProperty = Property.objects.get(id = id)
-        if currentProperty.owner == username:
-            messages.error(request, 'You can not report your own property')
-            return redirect('search_properties_page')
-        
-        return render(request, 'report_listing.html', {'id': id})
-    
+    try:
+        if request.method == 'POST':
+            complain = None
+            complain_id = request.POST['complain_id']
+            # Input Validation.
+            if(valid_num(complain_id) == False or len(complain_id) != 1 ):
+                messages.error(request, 'Invalid input format.')
+                return redirect('report_listing_page', id = id)
+            if complain_id == 1:
+                # Seller is not the rightful owner.
+                complain = "Seller is not the RIGHTFUL owner."
+            elif complain_id == 2:
+                # Listed property doesn't exist.
+                complain = "Listed Property do NOT exist."
+            elif complain_id == 3:
+                complain = "Multiple Transactions detected for the same listed property."
+            
+            try:
+                existing_report = ReportedListing.objects.get(property_id = id, reporter = username)
+                messages.info(request, 'You can only report once per listing')
+                return redirect('search_properties_page')
+            except ReportedListing.DoesNotExist:
+                # Create a report object for the listed property.
+                new_report = ReportedListing.objects.create(property_id = id, complain_id = complain_id, reporter = username)
+                new_report.save()
+                messages.success(request, 'The listed property has been reported to the admin.')
+                return redirect('search_properties_page')
+        else:
+            # Get request
+            currentProperty = Property.objects.get(id = id)
+            if currentProperty.owner == username:
+                messages.error(request, 'You can not report your own property')
+                return redirect('search_properties_page')
+            
+            return render(request, 'report_listing.html', {'id': id})
+    except:
+        messages.error(request, 'Unexpected error while processing the request. Please Try Again Later')
+        return redirect('search_properties_page')
+
 def ban_property(request, id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
@@ -2158,9 +2211,13 @@ def ban_property(request, id):
         messages.error(request, "Unauthorized Acces Detected. Report Sent. Ekyc access may be revoked for this account.")
         return redirect('logout_page')
     
-    currentProperty = Property.objects.get(id = id)
-    currentProperty.type = 'BANNED'
-    currentProperty.save()
+    try:
+        currentProperty = Property.objects.get(id = id)
+        currentProperty.type = 'BANNED'
+        currentProperty.save()
 
-    messages.success(request, 'Successfully banned the listing.')
-    return redirect('reported_property_list_page')
+        messages.success(request, 'Successfully banned the listing.')
+        return redirect('reported_property_list_page') 
+    except:
+        messages.error(request, 'Error while processing the ban request.')
+        return redirect('reported_property_list_page')
