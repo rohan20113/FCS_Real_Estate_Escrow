@@ -30,6 +30,11 @@ def valid_text(str):
     for i in str:
         if i not in allowed_characters:
             return False
+    lowered_string = str.lower()
+    restricted_keywords = ['select', 'insert', 'update', 'delete', 'union', 'onload', 'onmouseover', 'script']
+    for i in restricted_keywords:
+        if i in lowered_string:
+            return False
     return True
 
 # Create your views here.
@@ -164,11 +169,8 @@ def user_mail_verification(request, id):
         else:
             return redirect('login_page')
         
-    try:
-        if (type(id) == int):
-            pass
-    except:
-        messages.info(request, 'Invalid Request')
+    if (valid_num(id) == False):
+        messages.error(request, "Invalid Request")
         return redirect('login_page')
 
     if (request.session.get('otp_verification') == id):
@@ -331,7 +333,7 @@ def ekyc(request):
                     messages.success(request, 'eKYC successful')
                     request.session['email_kyc'] = email_input
                     # request.session['password_kyc'] = password_input  
-                    return redirect('/login')
+                    return redirect('login_page')
                 elif response_data.get('status') == 'error':
                     messages.error(request, response_data.get('message'))
                     return redirect('/')
@@ -364,13 +366,13 @@ def dashboard_admin(request):
         if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
         if(username is None):
-            return redirect('/login')    
+            return redirect('login_page')    
     else:
         username = request.session.get('username')
         if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
         if(username is None):
-            return redirect('/login') 
+            return redirect('login_page') 
         current_user = []
         try:
             users = AppUser.objects.all()
@@ -400,7 +402,7 @@ def dashboard_user(request):
             if(request.session.get('email_kyc') is None):
                 return redirect('logout_page')
             if(username is None):
-                return redirect('/login')
+                return redirect('login_page')
             # print(username)
             current_user = []
             users = AppUser.objects.all()
@@ -428,18 +430,31 @@ def dashboard_user_list(request):
             user_list.append(users[i])
     return render(request, 'user_list.html', {'users':user_list})
 
+def valid_address(str):
+    allowed_characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*.,- '
+    for i in str:
+        if i not in allowed_characters:
+            return False
+    lowered_string = str.lower()
+    restricted_keywords = ['select', 'insert', 'update', 'delete', 'union', 'onload', 'onmouseover', 'script']
+    for i in restricted_keywords:
+        if i in lowered_string:
+            return False
+    return True
+
 def add_property(request):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
     # print(username)
     if request.method == "POST":
         if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
         if(username is None):
-            return redirect('/login')
+            return redirect('login_page')
+        #try:
         input_addr_l1 = request.POST['address-line-1']
         input_addr_l2 = request.POST['address-line-2']
         input_city = request.POST['city']
@@ -455,11 +470,12 @@ def add_property(request):
             if valid_num(input_duration) == False or len(input_duration) == 0 or len(input_duration) > 3:
                 messages.error(request, 'Invalid duration field format.')
                 return redirect('add_property_page')
-            if input_duration > 240 or input_duration < 0:
+            if int(input_duration) > 240 or int(input_duration) < 0:
                 messages.error(request, 'Invalid duration range for RENTAL Property.')
                 return redirect('add_property_page')
-
-        if(valid_text(input_addr_l1) == False or valid_text(input_addr_l2) == False or valid_text(input_city) == False or valid_text(input_state) == False or valid_text(input_contract_type) == False or valid_text(input_facilities) == False or valid_num(input_price) == False):
+        print(type(input_price))
+        if(valid_address(input_addr_l1) == False or valid_address(input_addr_l2) == False or valid_address(input_city) == False or valid_address(input_state) == False or valid_text(input_contract_type) == False or  valid_num(input_price) == False):
+            # print(valid_address(input_addr_l1) == False ,valid_address(input_addr_l2) == False ,valid_address(input_city) == False ,valid_address(input_state) == False ,valid_text(input_contract_type) == False , valid_num(input_price) == False)
             messages.error(request, 'Invalid input format.')
             return redirect('add_property_page') 
 
@@ -487,7 +503,7 @@ def add_property(request):
             messages.error(request, 'Invalid State.')
             return redirect('add_property_page')
         
-        if (input_price <0 or input_price > 1000000000):
+        if (int(input_price) <0 or int(input_price) > 1000000000):
             messages.error(request, 'Invalid range of price.')
             return redirect('add_property_page')
 
@@ -525,6 +541,9 @@ def add_property(request):
         except:
             messages.error(request, 'Unexpected Error while adding the property. Please Try Again Later.')
             return redirect('my_properties_page')
+        # except:
+        #     messages.error(request, 'Unexpected Error')
+        #     return redirect('add_property_page')
     else:
         if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
@@ -561,6 +580,7 @@ def search_properties(request):
             return redirect('logout_page')
         if(username is None):
             return redirect('login_page')
+        return redirect('search_properties_page')
     else:
         username = request.session.get('username')
         # print(type(username), username)
@@ -593,7 +613,7 @@ def edit_property(request, id = id):
     if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
     
     try:
         property = Property.objects.get(id=id)
@@ -620,10 +640,10 @@ def edit_property(request, id = id):
 
 def update_property(request, id):
     username = request.session.get('username')
-    if(request.session.get('email_kyc') is None):
+    if(request.session.get('email_kyc') is None):   
             return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
     property = Property.objects.get(id=id)
     if(property.owner != username):
         return redirect('logout_page')
@@ -640,7 +660,8 @@ def update_property(request, id):
         return redirect('my_properties_page')
     
     if request.method =="POST":
-        property_instance = get_object_or_404(Property, pk = id)
+        # property_instance = get_object_or_404(Property, pk = id)
+        property_instance = Property.objects.get(id = id)
         # input_addr_l1 = request.POST['address-line-1']
         # input_addr_l2 = request.POST['address-line-2']
         # input_city = request.POST['city']
@@ -713,7 +734,7 @@ def delete_property(request, id):
     if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
     property = Property.objects.get(id=id)
     if(property.owner != username):
         return redirect('logout_page')
@@ -740,7 +761,7 @@ def apply_property_deal(request, id):
     if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
     property_selected = Property.objects.get(id=id)
     if property_selected.type not in ['SELL', 'RENT']:
         messages.info(request, 'Invalid application.')
@@ -773,7 +794,7 @@ def display_property_applications(request, id):
     if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
     property = Property.objects.get(id = id)
 
     if property.owner != username:
@@ -822,7 +843,7 @@ def reject_property_application(request, id):
     if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
     # fetching the object
     current_application = PropertyApplications.objects.get(id = id)
     property = Property.objects.get(id = current_application.property_id)
@@ -852,7 +873,7 @@ def accept_property_application(request, id):
     if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
     # property = Property.objects.get(id = id)
     # if property.owner != username:
     #     return redirect('logout_page')
@@ -888,7 +909,7 @@ def lessor_contract(request, id):
     if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
     
     current_application = PropertyApplications.objects.get(id = id)
     property = Property.objects.get(id = current_application.property_id)
@@ -990,7 +1011,7 @@ def seller_contract(request, id):
     if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
     
     current_application = PropertyApplications.objects.get(id = id)
     property = Property.objects.get(id = current_application.property_id)
@@ -1121,7 +1142,7 @@ def rentals_payment_gateway(request, id):
     if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
     
     if request.session.get('transaction_ekyc') is None or (request.session.get('transaction_ekyc') is not None and request.session.get('transaction_ekyc') != id):
         # EKYC was skipped intentionally.
@@ -1299,7 +1320,7 @@ def payment_gateway(request, id):
     if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
     if request.session.get('transaction_ekyc') is None or (request.session.get('transaction_ekyc') is not None and request.session.get('transaction_ekyc') != id):
         # EKYC was skipped intentionally.
         messages.info(request, 'EKYC is mandatory before moving on to payment gateway.')
@@ -1503,7 +1524,7 @@ def process_payment(request, id):
     if(request.session.get('email_kyc') is None):
         return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
     
     current_application = PropertyApplications.objects.get(id = id)
     property = Property.objects.get(id = current_application.property_id)
@@ -1559,7 +1580,7 @@ def past_buy_history(request):
     if(request.session.get('email_kyc') is None):
         return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
 
     if request.method == 'GET':
         contracts = Property_Transfer_Contract.objects.filter(buyer = username)
@@ -1610,7 +1631,7 @@ def past_sell_history(request):
     if(request.session.get('email_kyc') is None):
         return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
 
     if request.method == 'GET':
         sell_contracts_list = []

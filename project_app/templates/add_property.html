@@ -98,6 +98,15 @@
     <div class="container">
         <a class="go-to-dashboard-button" href="/dashboard">DASHBOARD</a>
         <h2>Add Property</h2>
+        <div class="message-container">
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                    <li{% if "success" in message.tags %} class="messages-success"{% elif "error" in message.tags %} class="messages-error" {% elif "info" in message.tags %} class="messages-info"{% endif %}>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
         <form action="" method="post">
             {% csrf_token %}
             <label for="address-line-1">Address Line-1:</label>
@@ -204,14 +213,6 @@
             });
         });
     </script>
-    <div class="message-container">
-        {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                <li{% if "success" in message.tags %} class="messages-success"{% elif "error" in message.tags %} class="messages-error" {% elif "info" in message.tags %} class="messages-info"{% endif %}>{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    </div>
+    
 </body>
 </html>
