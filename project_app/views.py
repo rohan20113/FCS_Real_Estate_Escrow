@@ -39,6 +39,8 @@ def login_user(request):
         return redirect('logout_page')
     
     if request.session.get('username') is not None:
+        if request.session.get('username') == 'chirag20047':
+            return redirect('admin_dashboard_page')
         return redirect('dashboard_page')
     
     if request.method == 'POST':
@@ -445,11 +447,50 @@ def add_property(request):
         input_state = request.POST['state']
         input_contract_type = request.POST['contract-type']
         input_facilities = request.POST['facilities']
-        input_contract_type = request.POST['contract-type']
+        # input_contract_type = request.POST['contract-type']
         input_price = request.POST['price']
         input_duration = None
         if input_contract_type == 'RENT':
             input_duration = request.POST['duration']
+            if valid_num(input_duration) == False or len(input_duration) == 0 or len(input_duration) > 3:
+                messages.error(request, 'Invalid duration field format.')
+                return redirect('add_property_page')
+            if input_duration > 240 or input_duration < 0:
+                messages.error(request, 'Invalid duration range for RENTAL Property.')
+                return redirect('add_property_page')
+
+        if(valid_text(input_addr_l1) == False or valid_text(input_addr_l2) == False or valid_text(input_city) == False or valid_text(input_state) == False or valid_text(input_contract_type) == False or valid_text(input_facilities) == False or valid_num(input_price) == False):
+            messages.error(request, 'Invalid input format.')
+            return redirect('add_property_page') 
+
+        if (len(input_addr_l1) == 0 or len(input_city) ==0 or len(input_contract_type) == 0 or len(input_facilities) == 0 or len(input_price) == 0 or len(input_state) == 0 or len(input_pin_code) ==0):
+            messages.error(request, 'Emtpy Fields detected.')
+            return redirect('add_property_page')
+        
+        if (len(input_addr_l1) > 30 or len(input_addr_l2) > 30 or len(input_city) > 30):
+            messages.error(request, 'Emtpy Fields detected.')
+            return redirect('add_property_page')
+
+        if(len(input_pin_code) !=6 or valid_num(input_pin_code) == False):
+            messages.error(request, 'Invalid Pin Code')
+            return redirect('add_property_page')
+        
+        if(input_facilities not in ['Furnished', 'Unfurnished', 'Semi-Furnished']):
+            messages.error(request, 'Invalid facilities input.')
+            return redirect('add_property_page')
+        
+        if(input_contract_type not in ['RENT', 'SELL']):
+            messages.error(request, 'Invalid Contract Type.')
+            return redirect('add_property_page')
+        
+        if(input_state not in ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh","Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha","Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal","Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Lakshadweep", "Puducherry" ]):
+            messages.error(request, 'Invalid State.')
+            return redirect('add_property_page')
+        
+        if (input_price <0 or input_price > 1000000000):
+            messages.error(request, 'Invalid range of price.')
+            return redirect('add_property_page')
+
         # input_availability_from = request.POST['availability-from']
         # input_availability_till = request.POST['availability-till']
         # print(type(input_availability_till))
@@ -459,33 +500,36 @@ def add_property(request):
             messages.error(request, 'PLEASE FILL DURATION OF RENT')
             return redirect('add_property_page')
         # print(input_availability_from, input_availability_till, input_contract_type, input_state, input_facilities)
-
+        try:
         # Date fields
-        if(input_contract_type == 'RENT'):
-            # date = input_availability_till.split('-')
-            # input_availability_till = date[2] + '-' +  date[1] + '-' + date[0]
-            # date = input_availability_from.split('-')
-            # input_availability_from = date[2] + '-' + date[1] + '-' + date[0]
+            if(input_contract_type == 'RENT'):
+                # date = input_availability_till.split('-')
+                # input_availability_till = date[2] + '-' +  date[1] + '-' + date[0]
+                # date = input_availability_from.split('-')
+                # input_availability_from = date[2] + '-' + date[1] + '-' + date[0]
+                # print(input_availability_from, input_availability_till)
+                property_to_be_added = Property.objects.create(owner = username, address_line_1 = input_addr_l1, address_line_2 = input_addr_l2, state = input_state,
+                city = input_city, pincode = input_pin_code, type = input_contract_type, duration = input_duration,
+                price = input_price, facilities = input_facilities)
+                property_to_be_added.save()
+                messages.success(request, 'Successfully added a property.')
+                return redirect('my_properties_page')   
             # print(input_availability_from, input_availability_till)
-            property_to_be_added = Property.objects.create(owner = username, address_line_1 = input_addr_l1, address_line_2 = input_addr_l2, state = input_state,
-            city = input_city, pincode = input_pin_code, type = input_contract_type, duration = input_duration,
-            price = input_price, facilities = input_facilities)
-            property_to_be_added.save()
-            messages.success(request, 'Successfully added a property.')
-            return redirect('my_properties_page')   
-        # print(input_availability_from, input_availability_till)
-        # Creating the object
-        else:
-            property_to_be_added = Property.objects.create(owner = username, address_line_1 = input_addr_l1, address_line_2 = input_addr_l2, state = input_state,
-            city = input_city, pincode = input_pin_code, type = input_contract_type, price = input_price, facilities = input_facilities)
-            property_to_be_added.save()
-            messages.success(request, 'Successfully added a property.')
-            return redirect('my_properties_page')   
+            # Creating the object
+            else:
+                property_to_be_added = Property.objects.create(owner = username, address_line_1 = input_addr_l1, address_line_2 = input_addr_l2, state = input_state,
+                city = input_city, pincode = input_pin_code, type = input_contract_type, price = input_price, facilities = input_facilities)
+                property_to_be_added.save()
+                messages.success(request, 'Successfully added a property.')
+                return redirect('my_properties_page')   
+        except:
+            messages.error(request, 'Unexpected Error while adding the property. Please Try Again Later.')
+            return redirect('my_properties_page')
     else:
         if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
         if(username is None):
-            return redirect('/login')
+            return redirect('login_page')
         return render(request, 'add_property.html')
     
 def my_properties(request):
@@ -493,18 +537,22 @@ def my_properties(request):
     if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
     if(username is None):
-        return redirect('/login')
+        return redirect('login_page')
     if(request.method == 'POST'):
-        pass
+        return redirect('my_properties_page')
     else:
-        my_properties_list = []
-        properties = Property.objects.values()
-        for i in range(len(properties)):
-            if username == properties[i]["owner"] and properties[i]['type'] != 'DELETED':
-                my_properties_list.append(properties[i])
-        # print("NUMBER_OF_PROPERTIES:",len(my_properties_list))
-        return render(request, 'my_properties.html', {'properties':my_properties_list})
-    
+        try:
+            my_properties_list = []
+            properties = Property.objects.values()
+            for i in range(len(properties)):
+                if username == properties[i]["owner"] and properties[i]['type'] != 'DELETED':
+                    my_properties_list.append(properties[i])
+            # print("NUMBER_OF_PROPERTIES:",len(my_properties_list))
+            return render(request, 'my_properties.html', {'properties':my_properties_list})
+        except:
+            messages.error(request, 'Unexpected Error')
+            return redirect('dashboard_page')
+
 def search_properties(request):
     request.session['transaction_ekyc'] = None
     if(request.method == 'POST'):
@@ -512,30 +560,33 @@ def search_properties(request):
         if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
         if(username is None):
-            return redirect('/login')
+            return redirect('login_page')
     else:
         username = request.session.get('username')
         # print(type(username), username)
         if(request.session.get('email_kyc') is None):
             return redirect('logout_page')
         if(username is None):
-            return redirect('/login')
-        my_properties_list = []
-        properties = list(Property.objects.values())
-        # print(properties)
-        for i in range(len(properties)):
-            # Exlcuding all properties of type: DELETED, DELISTED, ON_LEASE
-            if(properties[i]['owner'] !=username and properties[i]['type'] in ['SELL', 'RENT']):
-                my_properties_list.append(properties[i])
-        # print("LENGTH:", len(my_properties_list))
-        # print("SELECTED LIST:\n", (my_properties_list))
+            return redirect('login_page')
+        try:
+            my_properties_list = []
+            properties = list(Property.objects.values())
+            # print(properties)
+            for i in range(len(properties)):
+                # Exlcuding all properties of type: DELETED, DELISTED, ON_LEASE
+                if(properties[i]['owner'] !=username and properties[i]['type'] in ['SELL', 'RENT']):
+                    my_properties_list.append(properties[i])
+            # print("LENGTH:", len(my_properties_list))
+            # print("SELECTED LIST:\n", (my_properties_list))
 
-        # Fetching property_applications data
-        applications = list(PropertyApplications.objects.values())
-        # print(applications)
-        user_details = [{'user': username}]
-        return render(request, 'search_properties.html', {'properties':my_properties_list, 'applications':applications, 'user': user_details})
-    
+            # Fetching property_applications data
+            applications = list(PropertyApplications.objects.values())
+            # print(applications)
+            user_details = [{'user': username}]
+            return render(request, 'search_properties.html', {'properties':my_properties_list, 'applications':applications, 'user': user_details})
+        except:
+            messages.error(request, 'Unexpected Error')
+            return redirect('dashboard_page')
 
 def edit_property(request, id = id):
     username = request.session.get('username')
@@ -543,24 +594,29 @@ def edit_property(request, id = id):
             return redirect('logout_page')
     if(username is None):
         return redirect('/login')
-    property = Property.objects.get(id=id)
-    if(property.owner != username):
-        return redirect('logout_page')
-    if(property.type == 'DELETED'):
-        messages.error(request, "THIS PROPERTY WAS DELETED.")
-        return redirect('my_properties_page')
     
-    if(property.type == 'BANNED'):
-        messages.error(request, "You can not modify a BANNED listing.")
-        return redirect('my_properties_page')
-
-    if(property.type == 'ON LEASE'):
-        # Calculating the expiration of the lease contract.
+    try:
+        property = Property.objects.get(id=id)
+        if(property.owner != username):
+            return redirect('logout_page')
+        if(property.type == 'DELETED'):
+            messages.error(request, "THIS PROPERTY WAS DELETED.")
+            return redirect('my_properties_page')
         
-        messages.error(request, 'You can not modify a property ON LEASE')
+        if(property.type == 'BANNED'):
+            messages.error(request, "You can not modify a BANNED listing.")
+            return redirect('my_properties_page')
+
+        if(property.type == 'ON LEASE'):
+            # Calculating the expiration of the lease contract.
+            
+            messages.error(request, 'You can not modify a property ON LEASE')
+            return redirect('my_properties_page')
+        
+        return render(request, 'edit_property.html', {'property':property})
+    except:
+        messages.error(request, 'Unexpected Error')
         return redirect('my_properties_page')
-    
-    return render(request, 'edit_property.html', {'property':property})
 
 def update_property(request, id):
     username = request.session.get('username')
