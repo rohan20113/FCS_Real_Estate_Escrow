@@ -169,9 +169,9 @@ def user_mail_verification(request, id):
         else:
             return redirect('login_page')
         
-    if (valid_num(id) == False):
-        messages.error(request, "Invalid Request")
-        return redirect('login_page')
+    # if (valid_num(id) == False):
+    #     messages.error(request, "Invalid Request")
+    #     return redirect('login_page')
 
     if (request.session.get('otp_verification') == id):
         return redirect('user_document_verification_page', id = id)
@@ -473,7 +473,7 @@ def add_property(request):
             if int(input_duration) > 240 or int(input_duration) < 0:
                 messages.error(request, 'Invalid duration range for RENTAL Property.')
                 return redirect('add_property_page')
-        print(type(input_price))
+        # print(type(input_price))
         if(valid_address(input_addr_l1) == False or valid_address(input_addr_l2) == False or valid_address(input_city) == False or valid_address(input_state) == False or valid_text(input_contract_type) == False or  valid_num(input_price) == False):
             # print(valid_address(input_addr_l1) == False ,valid_address(input_addr_l2) == False ,valid_address(input_city) == False ,valid_address(input_state) == False ,valid_text(input_contract_type) == False , valid_num(input_price) == False)
             messages.error(request, 'Invalid input format.')
@@ -503,11 +503,7 @@ def add_property(request):
             messages.error(request, 'Invalid State.')
             return redirect('add_property_page')
         
-        if (int(input_price) <0 or int(input_price) > 1000000000):
-            messages.error(request, 'Invalid range of price.')
-            return redirect('add_property_page')
-
-        # input_availability_from = request.POST['availability-from']
+        # input_availability_from = request.POST['availability-from'] 
         # input_availability_till = request.POST['availability-till']
         # print(type(input_availability_till))
         # print((input_availability_till), (input_availability_till).reverse())
@@ -515,6 +511,15 @@ def add_property(request):
         if(input_contract_type == 'RENT' and (input_duration == None or len(input_duration) == 0)):
             messages.error(request, 'PLEASE FILL DURATION OF RENT')
             return redirect('add_property_page')
+    
+        if(input_contract_type == 'SELL'):
+            if (int(input_price) <0 or int(input_price) > 1000000000):
+                messages.error(request, 'Invalid range of price (sell type property).')
+                return redirect('add_property_page')
+        else:
+            if (int(input_price) <0 or int(input_price) > 5100000):
+                messages.error(request, 'Invalid range of price (rental type property).')
+                return redirect('add_property_page')
         # print(input_availability_from, input_availability_till, input_contract_type, input_state, input_facilities)
         try:
         # Date fields
@@ -599,11 +604,17 @@ def search_properties(request):
             # print("LENGTH:", len(my_properties_list))
             # print("SELECTED LIST:\n", (my_properties_list))
 
-            # Fetching property_applications data
+            # Fetching property_applications data --> NEED TO PASS ONLY THE APPLICATION IDs and nothing else.
+            applications_list = []
             applications = list(PropertyApplications.objects.values())
+            for i in range(len(applications)):
+                if applications[i]['interested_user'] == username and applications[i]['status'] in ['PENDING', 'ACCEPTED']:
+                    applications_list.append({'id': applications[i]['id']
+                                              , 'status': applications[i]['status']
+                                            })
             # print(applications)
             user_details = [{'user': username}]
-            return render(request, 'search_properties.html', {'properties':my_properties_list, 'applications':applications, 'user': user_details})
+            return render(request, 'search_properties.html', {'properties':my_properties_list, 'applications':applications_list, 'user': user_details})
         except:
             messages.error(request, 'Unexpected Error')
             return redirect('dashboard_page')
@@ -633,9 +644,15 @@ def edit_property(request, id = id):
             messages.error(request, 'You can not modify a property ON LEASE')
             return redirect('my_properties_page')
         
+        # Checking if any accepted application exists.
+        applications = PropertyApplications.objects.filter(property_id = id, property_owner = username, status = 'ACCEPTED')
+        if len(applications) != 0:
+            messages.error(request, 'You can not edit a property which is in between transaction phase.')
+            return redirect('my_properties_page')
+
         return render(request, 'edit_property.html', {'property':property})
     except:
-        messages.error(request, 'Unexpected Error')
+        messages.error(request, 'Unexpected Error. Please Try Again Later')
         return redirect('my_properties_page')
 
 def update_property(request, id):
@@ -644,90 +661,132 @@ def update_property(request, id):
             return redirect('logout_page')
     if(username is None):
         return redirect('login_page')
-    property = Property.objects.get(id=id)
-    if(property.owner != username):
-        return redirect('logout_page')
-    if(property.type == 'DELETED'):
-        messages.error(request, "THIS PROPERTY WAS DELETED.")
-        return redirect('my_properties_page')
     
-    if(property.type == 'BANNED'):
-        messages.error(request, "You can not modify a BANNED listing.")
-        return redirect('my_properties_page')
-    
-    if(property.type == 'ON LEASE'):
-        messages.error(request, 'can not modify a property on lease')
-        return redirect('my_properties_page')
-    
-    if request.method =="POST":
-        # property_instance = get_object_or_404(Property, pk = id)
-        property_instance = Property.objects.get(id = id)
-        # input_addr_l1 = request.POST['address-line-1']
-        # input_addr_l2 = request.POST['address-line-2']
-        # input_city = request.POST['city']
-        # input_pin_code = request.POST['pin-code']
-        # input_state = request.POST['state']
-        input_contract_type = request.POST['contract-type']
-        input_facilities = request.POST['facilities']
-        input_contract_type = request.POST['contract-type']
-        input_price = request.POST['price']
-        input_duration = None
-        if input_contract_type == 'RENT':
-            input_duration = request.POST['duration']
-        # input_availability_from = request.POST['availability-from']
-        # input_availability_till = request.POST['availability-till']
-        if(input_contract_type == 'RENT' and (input_duration is None or input_duration == '')):
-            messages.error(request, 'PLEASE FILL RENTAL DURATION')
-            return redirect('edit_property_page')
-        # print(input_availability_from, input_availability_till, input_contract_type, input_state, input_facilities)
+    try: 
+        property = Property.objects.get(id=id)
+        if(property.owner != username):
+            return redirect('logout_page')
+        if(property.type == 'DELETED'):
+            messages.error(request, "THIS PROPERTY WAS DELETED.")
+            return redirect('my_properties_page')
+        
+        if(property.type == 'BANNED'):
+            messages.error(request, "You can not modify a BANNED listing.")
+            return redirect('my_properties_page')
+        
+        if(property.type == 'ON LEASE'):
+            messages.error(request, 'can not modify a property on lease')
+            return redirect('my_properties_page')
 
-        # Date fields
-        if(input_contract_type == 'RENT'):
-            # property_instance.owner = input_owner
-            # property_instance.address_line_1 = input_addr_l1
-            # property_instance.address_line_2 = input_addr_l2
-            # property_instance.state = input_state
-            # property_instance.city = input_city
-            # property_instance.pincode = input_pin_code
-            property_instance.type = input_contract_type
-            # property_instance.starting_date = input_availability_from
-            # property_instance.ending_date = input_availability_till
-            property_instance.duration = input_duration
-            property_instance.price = input_price
-            property_instance.facilities = input_facilities
-            property_instance.save()
-            messages.success(request, "Successfully updated the property details.")
-            # Rejecting all current applications.
-            applications = PropertyApplications.objects.filter(property_id=id, status='PENDING')
-            for application in applications:
-                application.status = 'REJECTED'
-                application.save()
-            return redirect('my_properties_page')   
-        # print(input_availability_from, input_availability_till)
-        # Creating the object
+        applications = PropertyApplications.objects.filter(property_id = id, property_owner = username, status = 'ACCEPTED')
+        if len(applications) != 0:
+            messages.error(request, 'You can not edit a property which is in between transaction phase.')
+            return redirect('my_properties_page')
+        
+        if request.method =="POST":
+            # property_instance = get_object_or_404(Property, pk = id)
+            property_instance = Property.objects.get(id = id)
+            # input_addr_l1 = request.POST['address-line-1']
+            # input_addr_l2 = request.POST['address-line-2']
+            # input_city = request.POST['city']
+            # input_pin_code = request.POST['pin-code']
+            # input_state = request.POST['state']
+            input_contract_type = request.POST['contract-type']
+            input_facilities = request.POST['facilities']
+            input_contract_type = request.POST['contract-type']
+            input_price = request.POST['price']
+            input_duration = None
+
+            if(valid_text(input_contract_type) == False or  valid_num(input_price) == False):
+                # print(valid_address(input_addr_l1) == False ,valid_address(input_addr_l2) == False ,valid_address(input_city) == False ,valid_address(input_state) == False ,valid_text(input_contract_type) == False , valid_num(input_price) == False)
+                messages.error(request, 'Invalid input format.')
+                return redirect('add_property_page') 
+
+            if (len(input_contract_type) == 0 or len(input_facilities) == 0 or len(input_price) == 0):
+                messages.error(request, 'Emtpy Fields detected.')
+                return redirect('add_property_page')
+            
+            if(input_facilities not in ['Furnished', 'Unfurnished', 'Semi-Furnished']):
+                messages.error(request, 'Invalid facilities input.')
+                return redirect('add_property_page')
+            
+            if(input_contract_type not in ['RENT', 'SELL']):
+                messages.error(request, 'Invalid Contract Type.')
+                return redirect('add_property_page')
+
+            if input_contract_type == 'RENT':
+                input_duration = request.POST['duration']
+                if valid_num(input_duration) == False or len(input_duration) == 0 or len(input_duration) > 3:
+                    messages.error(request, 'Invalid duration field format.')
+                    return redirect('add_property_page')
+                if int(input_duration) > 240 or int(input_duration) < 0:
+                    messages.error(request, 'Invalid duration range for RENTAL Property.')
+                    return redirect('add_property_page')
+                if (int(input_price) <0 or int(input_price) > 5100000):
+                    messages.error(request, 'Invalid range of price (rental type property).')
+                    return redirect('add_property_page')
+            # input_availability_from = request.POST['availability-from']
+            # input_availability_till = request.POST['availability-till']
+            if(input_contract_type == 'RENT' and (input_duration is None or input_duration == '')):
+                messages.error(request, 'PLEASE FILL RENTAL DURATION')
+                return redirect('edit_property_page')
+            # print(input_availability_from, input_availability_till, input_contract_type, input_state, input_facilities)
+
+            if(input_contract_type == 'SELL'):
+                if (int(input_price) <0 or int(input_price) > 1000000000):
+                    messages.error(request, 'Invalid range of price (sell type property).')
+                    return redirect('add_property_page')
+
+            # Date fields
+            if(input_contract_type == 'RENT'):
+                # property_instance.owner = input_owner
+                # property_instance.address_line_1 = input_addr_l1
+                # property_instance.address_line_2 = input_addr_l2
+                # property_instance.state = input_state
+                # property_instance.city = input_city
+                # property_instance.pincode = input_pin_code
+                property_instance.type = input_contract_type
+                # property_instance.starting_date = input_availability_from
+                # property_instance.ending_date = input_availability_till
+                property_instance.duration = input_duration
+                property_instance.price = input_price
+                property_instance.facilities = input_facilities
+                property_instance.save()
+                messages.success(request, "Successfully updated the property details.")
+                # Rejecting all current applications.
+                applications = PropertyApplications.objects.filter(property_id=id, status='PENDING')
+                for application in applications:
+                    application.status = 'REJECTED'
+                    application.save()
+                return redirect('my_properties_page')   
+            # print(input_availability_from, input_availability_till)
+            # Creating the object
+            else:
+                # property_instance.address_line_1 = input_addr_l1
+                # property_instance.address_line_2 = input_addr_l2
+                # property_instance.state = input_state
+                # property_instance.city = input_city
+                # property_instance.pincode = input_pin_code
+                property_instance.type = input_contract_type
+                property_instance.duration = None
+                # property_instance.starting_date = None
+                # property_instance.ending_date = None
+                # print(property_instance.starting_date)
+                # print(property_instance.ending_date)
+                property_instance.price = input_price
+                property_instance.facilities = input_facilities
+                property_instance.save()
+                applications = PropertyApplications.objects.filter(property_id=id, status='PENDING')
+                for application in applications:
+                    application.status = 'REJECTED'
+                    application.save()
+                messages.success(request, "Successfully updated the property details.")
+                return redirect('my_properties_page')  
         else:
-            # property_instance.address_line_1 = input_addr_l1
-            # property_instance.address_line_2 = input_addr_l2
-            # property_instance.state = input_state
-            # property_instance.city = input_city
-            # property_instance.pincode = input_pin_code
-            property_instance.type = input_contract_type
-            property_instance.duration = None
-            # property_instance.starting_date = None
-            # property_instance.ending_date = None
-            # print(property_instance.starting_date)
-            # print(property_instance.ending_date)
-            property_instance.price = input_price
-            property_instance.facilities = input_facilities
-            property_instance.save()
-            applications = PropertyApplications.objects.filter(property_id=id, status='PENDING')
-            for application in applications:
-                application.status = 'REJECTED'
-                application.save()
-            messages.success(request, "Successfully updated the property details.")
-            return redirect('my_properties_page')  
-    else:
-        return render(request, 'edit_property.html', {'property':property})
+            return render(request, 'edit_property.html', {'property':property})
+    except:
+        messages.error(request, 'Unexpected Error')
+        return redirect('my_properties_page')
 
 def delete_property(request, id):
     username = request.session.get('username')
@@ -745,6 +804,11 @@ def delete_property(request, id):
     
     if property.type == 'BANNED':
         messages.error(request, 'You can not delete a BANNED listing.')
+        return redirect('my_properties_page')
+    
+    applications = PropertyApplications.objects.filter(property_id = id, property_owner = username, status = 'ACCEPTED')
+    if len(applications) != 0:
+        messages.error(request, 'You can not delete a property which is in between transaction phase.')
         return redirect('my_properties_page')
     
     # property.delete()
