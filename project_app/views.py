@@ -213,92 +213,96 @@ def user_document_verification(request, id):
     if(request.session.get('email_kyc') is None):
         return redirect('logout_page')
     
-    current_user = AppUser.objects.get(id = id)
-    if(current_user.email != request.session.get('email_kyc')):
-        return redirect('logout_page')
-    
-    if request.session.get('otp_verification') != id:
-        request.session['otp_verification'] = None
-        messages.error(request, 'User Verification needs to be performed first.')
-        return redirect('user_mail_verification_page', id = id)
-
-    # Check if already document verified: 
-    if(current_user.dv):
-        if request.session.get('username') is not None:
-            return redirect('dashboard_page')
-        else:
-            return redirect('login_page')
-    
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        public_key_pem = data.get('publicKey', None)
-        originalFileContents = data.get('originalFile', None)
-        signature = data.get('signedFile', None)
-        # public_key_pem = request.POST['publicKey']
-        # originalFileContents = request.POST['originalFile']
-        # signature = request.POST['signedFile']
-        # hash = request.POST['hashed']
-        # print(id)
-        # verification_result = 'FAIL'
-        # print(originalFileContents) #--> Verified, same content.
-        # print(signature)  #--> Verified, same content.
-        try:
-            # print('ENCODED HASH:',hash)
-            # hash = base64.b64decode(hash)
-            # print('\nDECODED HASH:',hash)
-            public_key_pem = base64.b64decode(public_key_pem)
-            # print(originalFileContents)
-            originalFileContents = base64.b64decode(originalFileContents)
-            # print("\nDecoded",originalFileContents)
-            # print(signature)    
-            signature = base64.b64decode(signature)
-            # print(signature)    
-            public_key = RSA.import_key(public_key_pem)
-            # Create a hash of the original file contents
-            h = SHA256.new(originalFileContents)
-            # calculated_hash = h.hexdigest()
-            # print('Calculated\n', calculated_hash, '\nReceived\n', hash)
-            # print(type(calculated_hash), type(hash))
-            # print(calculated_hash == str((hash).decode('utf-8')))
-            verifier = pkcs1_15.new(public_key)
-            if verifier.verify(h, signature) is None:
-                # verification_result = 'PASS'
-                # Update the user's dv boolean_field & store the public_key_pem.
-                current_user = AppUser.objects.get(id = id)
-                current_user.dv = True
-                current_user.public_key = public_key_pem.decode('utf-8')
-                current_user.save()
-            messages.success(request, 'Document Verification Successful')
-            response_data = {
-                'success': True,
-                'url': '/login'
-            }
+    try:
+        current_user = AppUser.objects.get(id = id)
+        if(current_user.email != request.session.get('email_kyc')):
+            return redirect('logout_page')
+        
+        if request.session.get('otp_verification') != id:
             request.session['otp_verification'] = None
-            return JsonResponse(response_data)
-            # messages.info(request, 'Document Verification Failed!\n Please Try Again.')
-            # response_data = {
-            #     'success': False,
-            #     'url': f'/user_document_verification/{id}'
-            # }
-            # return redirect('login_page')
-            # return render(request, 'user_document_verification_result.html', {'public_key_pem':public_key_pem, 'public_key':public_key, 'originalFile':originalFileContents,
-            #                                                                 'signature': signature, 'result': verification_result})
-    
-        except Exception as e:
-            # Handle any exceptions that may occur during verification
-            # print("Error during verification:", str(e))
-            # Print specific details about the data and error
-            messages.error(request, 'Document Verification Failed!\n Please Try Again.')
-            response_data = {
-                'success': False,
-                'url': f'/user_document_verification/{id}'
-            }
-            return JsonResponse(response_data)
-            # return render(request, 'user_document_verification.html', {'id': id})
+            messages.error(request, 'User Verification needs to be performed first.')
+            return redirect('user_mail_verification_page', id = id)
 
-    elif request.method == 'GET':
-        messages.info(request, 'NOTE: Leaving the verification process in between may hamper user experience.')
-        return render(request, 'user_document_verification.html', {'id': id})
+        # Check if already document verified: 
+        if(current_user.dv):
+            if request.session.get('username') is not None:
+                return redirect('dashboard_page')
+            else:
+                return redirect('login_page')
+        
+        if request.method == 'POST':
+            data = json.loads(request.body)
+            public_key_pem = data.get('publicKey', None)
+            originalFileContents = data.get('originalFile', None)
+            signature = data.get('signedFile', None)
+            # public_key_pem = request.POST['publicKey']
+            # originalFileContents = request.POST['originalFile']
+            # signature = request.POST['signedFile']
+            # hash = request.POST['hashed']
+            # print(id)
+            # verification_result = 'FAIL'
+            # print(originalFileContents) #--> Verified, same content.
+            # print(signature)  #--> Verified, same content.
+            try:
+                # print('ENCODED HASH:',hash)
+                # hash = base64.b64decode(hash)
+                # print('\nDECODED HASH:',hash)
+                public_key_pem = base64.b64decode(public_key_pem)
+                # print(originalFileContents)
+                originalFileContents = base64.b64decode(originalFileContents)
+                # print("\nDecoded",originalFileContents)
+                # print(signature)    
+                signature = base64.b64decode(signature)
+                # print(signature)    
+                public_key = RSA.import_key(public_key_pem)
+                # Create a hash of the original file contents
+                h = SHA256.new(originalFileContents)
+                # calculated_hash = h.hexdigest()
+                # print('Calculated\n', calculated_hash, '\nReceived\n', hash)
+                # print(type(calculated_hash), type(hash))
+                # print(calculated_hash == str((hash).decode('utf-8')))
+                verifier = pkcs1_15.new(public_key)
+                if verifier.verify(h, signature) is None:
+                    # verification_result = 'PASS'
+                    # Update the user's dv boolean_field & store the public_key_pem.
+                    current_user = AppUser.objects.get(id = id)
+                    current_user.dv = True
+                    current_user.public_key = public_key_pem.decode('utf-8')
+                    current_user.save()
+                messages.success(request, 'Document Verification Successful')
+                response_data = {
+                    'success': True,
+                    'url': '/login'
+                }
+                request.session['otp_verification'] = None
+                return JsonResponse(response_data)
+                # messages.info(request, 'Document Verification Failed!\n Please Try Again.')
+                # response_data = {
+                #     'success': False,
+                #     'url': f'/user_document_verification/{id}'
+                # }
+                # return redirect('login_page')
+                # return render(request, 'user_document_verification_result.html', {'public_key_pem':public_key_pem, 'public_key':public_key, 'originalFile':originalFileContents,
+                #                                                                 'signature': signature, 'result': verification_result})
+        
+            except Exception as e:
+                # Handle any exceptions that may occur during verification
+                # print("Error during verification:", str(e))
+                # Print specific details about the data and error
+                messages.error(request, 'Document Verification Failed!\n Please Try Again.')
+                response_data = {
+                    'success': False,
+                    'url': f'/user_document_verification/{id}'
+                }
+                return JsonResponse(response_data)
+                # return render(request, 'user_document_verification.html', {'id': id})
+
+        elif request.method == 'GET':
+            messages.info(request, 'NOTE: Leaving the verification process in between may hamper user experience.')
+            return render(request, 'user_document_verification.html', {'id': id})
+    except:
+        messages.error(request, 'Unexpected Error')
+        return redirect('login_page')
 
 def ekyc(request):
     # status -> success, error
@@ -794,27 +798,31 @@ def delete_property(request, id):
             return redirect('logout_page')
     if(username is None):
         return redirect('login_page')
-    property = Property.objects.get(id=id)
-    if(property.owner != username):
-        return redirect('logout_page')
-    
-    if property.type == 'ON LEASE':
-        messages.error(request, 'You can not delete a property ON LEASE.')
+    try:
+        property = Property.objects.get(id=id)
+        if(property.owner != username):
+            return redirect('logout_page')
+        
+        if property.type == 'ON LEASE':
+            messages.error(request, 'You can not delete a property ON LEASE.')
+            return redirect('my_properties_page')
+        
+        if property.type == 'BANNED':
+            messages.error(request, 'You can not delete a BANNED listing.')
+            return redirect('my_properties_page')
+        
+        applications = PropertyApplications.objects.filter(property_id = id, property_owner = username, status = 'ACCEPTED')
+        if len(applications) != 0:
+            messages.error(request, 'You can not delete a property which is in between transaction phase.')
+            return redirect('my_properties_page')
+        
+        # property.delete()
+        property.type = 'DELETED'
+        property.save()
         return redirect('my_properties_page')
-    
-    if property.type == 'BANNED':
-        messages.error(request, 'You can not delete a BANNED listing.')
+    except:
+        messages.error(request, 'Unexpected Error')
         return redirect('my_properties_page')
-    
-    applications = PropertyApplications.objects.filter(property_id = id, property_owner = username, status = 'ACCEPTED')
-    if len(applications) != 0:
-        messages.error(request, 'You can not delete a property which is in between transaction phase.')
-        return redirect('my_properties_page')
-    
-    # property.delete()
-    property.type = 'DELETED'
-    property.save()
-    return redirect('my_properties_page')
 
 def logout_user(request):
     request.session.flush()
@@ -826,32 +834,39 @@ def apply_property_deal(request, id):
             return redirect('logout_page')
     if(username is None):
         return redirect('login_page')
-    property_selected = Property.objects.get(id=id)
-    if property_selected.type not in ['SELL', 'RENT']:
-        messages.info(request, 'Invalid application.')
-        return redirect('logout_page')
-    if property_selected.owner == username:
-        return redirect('logout_page')
-    property_owner_username = property_selected.owner
-    contract_type = property_selected.type
+    try:
+        property_selected = Property.objects.get(id=id)
+        if property_selected.type not in ['SELL', 'RENT']:
+            messages.error(request, 'Invalid application selected. Property NOT FOR SALE/RENT.')
+            return redirect('logout_page')
+        if property_selected.owner == username:
+            messages.error(request, 'You can not apply for a property that you own.')
+            return redirect('logout_page')
+        property_owner_username = property_selected.owner
+        contract_type = property_selected.type
 
-    # Check if no existing row/copy is there:
-    applications = list(PropertyApplications.objects.values())
-    for i in range(len(applications)):
-        # if(applications[i]['property_id'] == id and applications[i]['status'] == 'ACCEPTED'):
-        #     if(applications[i]['interested_user'] == username):
-        #         messages.success(request, 'Your request has been accepted.\nPlease proceed to pay!')
-        #         return redirect('search_properties_page')
-        if(applications[i]['property_id'] == id and applications[i]['status'] == 'PENDING'):
-            if(applications[i]['interested_user'] == username):
-                messages.info(request, 'Pending Request Already Exists')
-                return redirect('search_properties_page')
-            
-    # Now, we've to add this pending request for the given property.
-    application = PropertyApplications.objects.create(property_id = id, interested_user = username, property_owner = property_owner_username, application_type = contract_type)
-    application.save()
-    messages.success(request, 'Application Sent Successfully!')
-    return redirect('search_properties_page')
+        # Check if no existing row/copy is there:
+        applications = list(PropertyApplications.objects.values())
+        for i in range(len(applications)):
+            # if(applications[i]['property_id'] == id and applications[i]['status'] == 'ACCEPTED'):
+            #     if(applications[i]['interested_user'] == username):
+            #         messages.success(request, 'Your request has been accepted.\nPlease proceed to pay!')
+            #         return redirect('search_properties_page')
+            if(applications[i]['property_id'] == id and applications[i]['status'] == 'PENDING'):
+                if(applications[i]['interested_user'] == username):
+                    messages.info(request, 'Pending Request Already Exists')
+                    return redirect('search_properties_page')
+            if(applications[i]['property_id'] == id and applications[i]['status'] == 'ACCEPTED'):
+                return redirect('display_property_applications_page', id = applications[i]['id'])
+                
+        # Now, we've to add this pending request for the given property.
+        application = PropertyApplications.objects.create(property_id = id, interested_user = username, property_owner = property_owner_username, application_type = contract_type)
+        application.save()
+        messages.success(request, 'Application Sent Successfully!')
+        return redirect('search_properties_page')
+    except:
+        messages.error(request, 'Unexpected Error')
+        return redirect('search_properties_page')
 
 def display_property_applications(request, id):
     username = request.session.get('username')
@@ -859,48 +874,53 @@ def display_property_applications(request, id):
             return redirect('logout_page')
     if(username is None):
         return redirect('login_page')
-    property = Property.objects.get(id = id)
-
-    if property.owner != username:
-        return redirect('logout_page')
     
-    if property.type == 'DELETED':
-        messages.error(request, 'No applications exist for a deleted property.')
+    try:
+        property = Property.objects.get(id = id)
+
+        if property.owner != username:
+            return redirect('logout_page')
+        
+        if property.type == 'DELETED':
+            messages.error(request, 'No applications exist for a deleted property.')
+            return redirect('my_properties_page')
+
+        if property.type == 'ON LEASE':
+            messages.error(request, 'No applications are allowed for a property ON LEASE.')
+            return redirect('my_properties_page')
+        
+        if(property.type == 'BANNED'):
+            messages.error(request, "No transactions allowed for a BANNED listing.")
+            return redirect('my_properties_page')
+
+        # accepted_applications = PropertyApplications.objects.filter(property_id=id, status='ACCEPTED')
+        accepted_applications = []
+        applications = list(PropertyApplications.objects.values())
+        for i in range(len(applications)):
+            if(applications[i]['property_id'] == id and applications[i]['status'] == 'ACCEPTED'):
+                accepted_applications.append(applications[i])
+                break
+        if(len(accepted_applications) != 0):
+            # print("PROPERTY ACCEPTED APPLICATION")
+            return render(request, 'accepted_property_application.html', {'applications':accepted_applications})
+
+        # property = Property.objects.get(id = id)
+        current_applications = []
+        for i in range(len(applications)):
+            if(applications[i]['property_id'] == id and applications[i]['status'] == 'PENDING'):
+                current_applications.append(applications[i])
+
+        # No pending requests 
+        if(len(current_applications) == 0):
+            # print('NO APPLICATIONS AVAILABLE')
+            messages.info(request, 'No Pending Requests')
+            return redirect('my_properties_page')
+        
+        # If pending requests exist:
+        return render(request, 'display_property_applications.html', {'applications':current_applications})
+    except:
+        messages.error(request, 'Unexpected Error')
         return redirect('my_properties_page')
-
-    if property.type == 'ON LEASE':
-        messages.error(request, 'No applications are allowed for a property ON LEASE.')
-        return redirect('my_properties_page')
-    
-    if(property.type == 'BANNED'):
-        messages.error(request, "No transactions allowed for a BANNED listing.")
-        return redirect('my_properties_page')
-
-    # accepted_applications = PropertyApplications.objects.filter(property_id=id, status='ACCEPTED')
-    accepted_applications = []
-    applications = list(PropertyApplications.objects.values())
-    for i in range(len(applications)):
-        if(applications[i]['property_id'] == id and applications[i]['status'] == 'ACCEPTED'):
-            accepted_applications.append(applications[i])
-            break
-    if(len(accepted_applications) != 0):
-        # print("PROPERTY ACCEPTED APPLICATION")
-        return render(request, 'accepted_property_application.html', {'applications':accepted_applications})
-
-    # property = Property.objects.get(id = id)
-    current_applications = []
-    for i in range(len(applications)):
-        if(applications[i]['property_id'] == id and applications[i]['status'] == 'PENDING'):
-            current_applications.append(applications[i])
-
-    # No pending requests 
-    if(len(current_applications) == 0):
-        # print('NO APPLICATIONS AVAILABLE')
-        messages.info(request, 'No Pending Requests')
-        return redirect('/my_properties')
-    
-    # If pending requests exist:
-    return render(request, 'display_property_applications.html', {'applications':current_applications})
 
 def reject_property_application(request, id):
     username = request.session.get('username')
@@ -908,29 +928,34 @@ def reject_property_application(request, id):
             return redirect('logout_page')
     if(username is None):
         return redirect('login_page')
-    # fetching the object
-    current_application = PropertyApplications.objects.get(id = id)
-    property = Property.objects.get(id = current_application.property_id)
-    if(property.owner != username):
-        return redirect('logout_page')
-    current_property = current_application.property_id
-    # Changing the request's status
-    current_application.status = 'REJECTED'
-    current_application.save()
-    messages.success(request, 'Succesfully Updated Request')
-    
-    # # Find if more pending requests are there.
-    applications = list(PropertyApplications.objects.values())
-    for i in range(len(applications)):
-        if(applications[i]['property_id'] == current_property and applications[i]['status'] == 'PENDING'):
-            # return redirect('display_property_applications_page/{current_property}')
-            # return redirect(request.path)
-            current_url = reverse('display_property_applications_page', args=[current_property])
-            # messages.info(request, 'Successfully Updated Request')
-            return redirect(current_url)
+    try:
+        # fetching the object
+        current_application = PropertyApplications.objects.get(id = id)
+        property = Property.objects.get(id = current_application.property_id)
+        if(property.owner != username):
+            messages.error(request, 'You are not the owner of the property you are trying to delete.')
+            return redirect('logout_page')
+        current_property = current_application.property_id
+        # Changing the request's status
+        current_application.status = 'REJECTED'
+        current_application.save()
+        messages.success(request, 'Succesfully Updated Request')
+        
+        # # Find if more pending requests are there.
+        applications = list(PropertyApplications.objects.values())
+        for i in range(len(applications)):
+            if(applications[i]['property_id'] == current_property and applications[i]['status'] == 'PENDING'):
+                # return redirect('display_property_applications_page/{current_property}')
+                # return redirect(request.path)
+                current_url = reverse('display_property_applications_page', args=[current_property])
+                # messages.info(request, 'Successfully Updated Request')
+                return redirect(current_url)
 
-    # If none, return to my_properties page.
-    return redirect('my_properties_page')
+        # If none, return to my_properties page.
+        return redirect('my_properties_page')
+    except:
+        messages.error(request, 'Unexpected Error')
+        return redirect('my_properties_page')
 
 def accept_property_application(request, id):
     username = request.session.get('username')
@@ -942,31 +967,36 @@ def accept_property_application(request, id):
     # if property.owner != username:
     #     return redirect('logout_page')
     # fetching the object
-    current_application = PropertyApplications.objects.get(id = id)
-    property = Property.objects.get(id = current_application.property_id)
-    if(property.owner != username):
-        return redirect('logout_page')
-    # current_property = current_application.property_id
+    try:
+        current_application = PropertyApplications.objects.get(id = id)
+        property = Property.objects.get(id = current_application.property_id)
+        if(property.owner != username):
+            messages.error(request, 'You are not the owner of the property you are trying to process.')
+            return redirect('logout_page')
+        # current_property = current_application.property_id
 
-    # # Changing the current request's status
-    # current_application.status = 'ACCEPTED'
-    # current_application.save()
-    # messages.info(request, 'Succesfully Updated Request')
+        # # Changing the current request's status
+        # current_application.status = 'ACCEPTED'
+        # current_application.save()
+        # messages.info(request, 'Succesfully Updated Request')
 
-    
-    # # Rejecting all other pending requests.
-    # applications = PropertyApplications.objects.filter(property_id=current_property, status='PENDING')
-    # for application in applications:
-    #     application.status = 'REJECTED'
-    #     application.save()
-    
-    # Create another contract and pass it to the next api. 
+        
+        # # Rejecting all other pending requests.
+        # applications = PropertyApplications.objects.filter(property_id=current_property, status='PENDING')
+        # for application in applications:
+        #     application.status = 'REJECTED'
+        #     application.save()
+        
+        # Create another contract and pass it to the next api. 
 
-    # messages.info(request, "Application Accepted!\n Please Wait for Payment.")
-    if current_application.application_type == 'RENT':
-        return redirect('lessor_contract_page', id = id)
-    else:
-        return redirect('seller_contract_page', id = id)
+        # messages.info(request, "Application Accepted!\n Please Wait for Payment.")
+        if current_application.application_type == 'RENT':
+            return redirect('lessor_contract_page', id = id)
+        else:
+            return redirect('seller_contract_page', id = id)
+    except:
+        messages.error(request, 'Unexpected Error')
+        return redirect('my_properties_page')
 
 def lessor_contract(request, id):
     username = request.session.get('username')
@@ -975,100 +1005,105 @@ def lessor_contract(request, id):
     if(username is None):
         return redirect('login_page')
     
-    current_application = PropertyApplications.objects.get(id = id)
-    property = Property.objects.get(id = current_application.property_id)
-    if(property.owner != username):
-        return redirect('logout_page')
-    
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        base64JsonString = data.get('contract_payload', None)
-        # jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
-        base64Signature = data.get('signature', None)
-        # signature = base64.b64decode(base64Signature)
-        signature = base64.b64decode(data.get('signature', None))
-        # print('JSON STRING',jsonString)
-        # print('SIGNATURE',signature)
-
-        # Create hash of the same payload and then verify the signatures. 
-        # If correct, then accept the application, create a contract and save the data in the table.
-        public_key_pem = AppUser.objects.get(username = username).public_key
-        public_key = RSA.import_key(public_key_pem)
-        # print(public_key)
-        # Create a hash of the original file contents
-        try:
-            h = SHA256.new(base64JsonString.encode('utf-8'))
-            verifier = pkcs1_15.new(public_key)
-            verifier.verify(h, signature)
-        except Exception as e:
-            messages.error(request, 'Signature Error!\n Please Try Again.')
-            response_data = {
-                'success': False,
-                'url': f'/lessor_contract/{id}'
-            }
-            return JsonResponse(response_data)
-        
-        # Approve the application & reject others.
-        # fetching the object
-        current_application = PropertyApplications.objects.get(id = id)
-        current_property_id = current_application.property_id
-        property = Property.objects.get(id = current_property_id)
-        # Changing the current request's status
-        current_application.status = 'ACCEPTED'
-        current_application.save()
-        
-        # Rejecting all other pending requests.
-        applications = PropertyApplications.objects.filter(property_id=current_property_id, status='PENDING')
-        for application in applications:
-            application.status = 'REJECTED'
-            application.save()
-        
-        contract_value = property.duration * property.price
-        # lessee_obj = AppUser.objects.get(username = current_application.interested_user)
-        lessor_obj = AppUser.objects.get(username = current_application.property_owner)
-        # Create a contract object and save the string. 
-        signed_token = base64JsonString + "." + base64Signature
-        rentals_object = RentalsContract.objects.create(application_id = id, property_id = current_application.property_id,
-                                                        property_address_line_1 = property.address_line_1, property_address_line_2 = property.address_line_2,
-                                                        property_state = property.state, property_city = property.city, property_pincode = property.pincode,
-                                                        username = current_application.property_owner, first_name = lessor_obj.first_name, second_name = lessor_obj.second_name, 
-                                                        party_type='lessor' ,date_of_agreement = timezone.now().date(), token = signed_token, duration = property.duration,
-                                                        rent_per_month = property.price, total_rent = contract_value)
-        rentals_object.save()
-        # print(rentals_object)
-        messages.success(request, 'Successfully approved the application')
-        response_data = {
-            'success': True,
-            'url': '/my_properties/'
-        }
-        return JsonResponse(response_data)
-        
-    else:
-        # Fetch the current application object.
+    try:
         current_application = PropertyApplications.objects.get(id = id)
         property = Property.objects.get(id = current_application.property_id)
+        if(property.owner != username):
+            messages.error(request, 'You are trying to process contract of a property that you do not own. Please login into respective account first.')
+            return redirect('logout_page')
+        
+        if request.method == 'POST':
+            data = json.loads(request.body)
+            base64JsonString = data.get('contract_payload', None)
+            # jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
+            base64Signature = data.get('signature', None)
+            # signature = base64.b64decode(base64Signature)
+            signature = base64.b64decode(data.get('signature', None))
+            # print('JSON STRING',jsonString)
+            # print('SIGNATURE',signature)
 
-        property_address = property.address_line_1 + " " +  property.address_line_2
-        property_state = property.state
-        property_city = property.city
-        property_pincode = property.pincode
-        contract_value = property.price * property.duration
-        date_of_agreement = timezone.now().date()
+            # Create hash of the same payload and then verify the signatures. 
+            # If correct, then accept the application, create a contract and save the data in the table.
+            public_key_pem = AppUser.objects.get(username = username).public_key
+            public_key = RSA.import_key(public_key_pem)
+            # print(public_key)
+            # Create a hash of the original file contents
+            try:
+                h = SHA256.new(base64JsonString.encode('utf-8'))
+                verifier = pkcs1_15.new(public_key)
+                verifier.verify(h, signature)
+            except Exception as e:
+                messages.error(request, 'Signature Error!\n Please Try Again.')
+                response_data = {
+                    'success': False,
+                    'url': f'/lessor_contract/{id}'
+                }
+                return JsonResponse(response_data)
+            
+            # Approve the application & reject others.
+            # fetching the object
+            current_application = PropertyApplications.objects.get(id = id)
+            current_property_id = current_application.property_id
+            property = Property.objects.get(id = current_property_id)
+            # Changing the current request's status
+            current_application.status = 'ACCEPTED'
+            current_application.save()
+            
+            # Rejecting all other pending requests.
+            applications = PropertyApplications.objects.filter(property_id=current_property_id, status='PENDING')
+            for application in applications:
+                application.status = 'REJECTED'
+                application.save()
+            
+            contract_value = property.duration * property.price
+            # lessee_obj = AppUser.objects.get(username = current_application.interested_user)
+            lessor_obj = AppUser.objects.get(username = current_application.property_owner)
+            # Create a contract object and save the string. 
+            signed_token = base64JsonString + "." + base64Signature
+            rentals_object = RentalsContract.objects.create(application_id = id, property_id = current_application.property_id,
+                                                            property_address_line_1 = property.address_line_1, property_address_line_2 = property.address_line_2,
+                                                            property_state = property.state, property_city = property.city, property_pincode = property.pincode,
+                                                            username = current_application.property_owner, first_name = lessor_obj.first_name, second_name = lessor_obj.second_name, 
+                                                            party_type='lessor' ,date_of_agreement = timezone.now().date(), token = signed_token, duration = property.duration,
+                                                            rent_per_month = property.price, total_rent = contract_value)
+            rentals_object.save()
+            # print(rentals_object)
+            messages.success(request, 'Successfully approved the application')
+            response_data = {
+                'success': True,
+                'url': '/my_properties/'
+            }
+            return JsonResponse(response_data)
+            
+        else:
+            # Fetch the current application object.
+            current_application = PropertyApplications.objects.get(id = id)
+            property = Property.objects.get(id = current_application.property_id)
 
-        # buyer = AppUser.objects.get(username = current_application.interested_user)
-        # buyer_name = buyer.first_name + " " + buyer.second_name
+            property_address = property.address_line_1 + " " +  property.address_line_2
+            property_state = property.state
+            property_city = property.city
+            property_pincode = property.pincode
+            contract_value = property.price * property.duration
+            date_of_agreement = timezone.now().date()
 
-        seller = AppUser.objects.get(username = current_application.property_owner)
-        seller_name = seller.first_name +  " " + seller.second_name        
+            # buyer = AppUser.objects.get(username = current_application.interested_user)
+            # buyer_name = buyer.first_name + " " + buyer.second_name
 
-        # Sending contract details to be displayed.
-        resp_data =  {'application_id': id, 'seller_username': current_application.property_owner, 'seller_name': seller_name,
-                      'property_id': current_application.property_id,  'property_address': property_address, 'duration': property.duration,
-                      'city': property_city, 'state': property_state, 'pincode': property_pincode, 'price_pm': property.price, 
-                      'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'party_type': 'Lessor'
-                      }
-        # messages.info(request, 'Sign the above contract.')
-        return render(request, 'lessor_contract.html', resp_data)
+            seller = AppUser.objects.get(username = current_application.property_owner)
+            seller_name = seller.first_name +  " " + seller.second_name        
+
+            # Sending contract details to be displayed.
+            resp_data =  {'application_id': id, 'seller_username': current_application.property_owner, 'seller_name': seller_name,
+                        'property_id': current_application.property_id,  'property_address': property_address, 'duration': property.duration,
+                        'city': property_city, 'state': property_state, 'pincode': property_pincode, 'price_pm': property.price, 
+                        'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'party_type': 'Lessor'
+                        }
+            # messages.info(request, 'Sign the above contract.')
+            return render(request, 'lessor_contract.html', resp_data)
+    except:
+        messages.error(request, 'Unexpected Error')
+        return redirect('my_properties_page')
 
 def seller_contract(request, id):
     username = request.session.get('username')
@@ -1077,100 +1112,105 @@ def seller_contract(request, id):
     if(username is None):
         return redirect('login_page')
     
-    current_application = PropertyApplications.objects.get(id = id)
-    property = Property.objects.get(id = current_application.property_id)
-    if(property.owner != username):
-        return redirect('logout_page')
-    
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        base64JsonString = data.get('contract_payload', None)
-        # jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
-        base64Signature = data.get('signature', None)
-        # signature = base64.b64decode(base64Signature)
-        signature = base64.b64decode(data.get('signature', None))
-        # print('JSON STRING',jsonString)
-        # print('SIGNATURE',signature)
-
-        # Create hash of the same payload and then verify the signatures. 
-        # If correct, then accept the application, create a contract and save the data in the table.
-        public_key_pem = AppUser.objects.get(username = username).public_key
-        public_key = RSA.import_key(public_key_pem)
-        # print(public_key)
-        # Create a hash of the original file contents
-        try:
-            h = SHA256.new(base64JsonString.encode('utf-8'))
-            verifier = pkcs1_15.new(public_key)
-            verifier.verify(h, signature)
-        except Exception as e:
-            messages.error(request, 'Signature Error!\n Please Try Again.')
-            response_data = {
-                'success': False,
-                'url': f'/seller_contract/{id}'
-            }
-            return JsonResponse(response_data)
-        
-        # Approve the application & reject others.
-        # fetching the object
-        current_application = PropertyApplications.objects.get(id = id)
-        current_property_id = current_application.property_id
-        property = Property.objects.get(id = current_property_id)
-        # Changing the current request's status
-        current_application.status = 'ACCEPTED'
-        current_application.save()
-        
-        # Rejecting all other pending requests.
-        applications = PropertyApplications.objects.filter(property_id=current_property_id, status='PENDING')
-        for application in applications:
-            application.status = 'REJECTED'
-            application.save()
-        
-        buyer_obj = AppUser.objects.get(username = current_application.interested_user)
-        seller_obj = AppUser.objects.get(username = current_application.property_owner)
-        # Create a contract object and save the string. 
-        signed_token = base64JsonString + "." + base64Signature
-        contract_object = Property_Transfer_Contract.objects.create(application_id = id, property_id = current_application.property_id,
-                                                                    property_address_line_1 = property.address_line_1, property_address_line_2 = property.address_line_2,
-                                                                    property_state = property.state, property_city = property.city, property_pincode = property.pincode,
-                                                                    buyer = current_application.interested_user, first_name_buyer = buyer_obj.first_name, second_name_buyer = buyer_obj.second_name,
-                                                                    seller = current_application.property_owner, first_name_seller = seller_obj.first_name, second_name_seller = seller_obj.second_name, 
-                                                                    price = property.price, date_of_agreement = timezone.now().date(), token = signed_token)
-        contract_object.save()
-        messages.success(request, 'Successfully approved the application')
-        response_data = {
-            'success': True,
-            'url': '/my_properties/'
-        }
-        return JsonResponse(response_data)
-        
-    else:
-        # Fetch the current application object.
+    try:
         current_application = PropertyApplications.objects.get(id = id)
         property = Property.objects.get(id = current_application.property_id)
+        if(property.owner != username):
+            messages.error(request, 'You are trying to process contract of a property that you do not own. Please login into respective account first.')
+            return redirect('logout_page')
+        
+        if request.method == 'POST':
+            data = json.loads(request.body)
+            base64JsonString = data.get('contract_payload', None)
+            # jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
+            base64Signature = data.get('signature', None)
+            # signature = base64.b64decode(base64Signature)
+            signature = base64.b64decode(data.get('signature', None))
+            # print('JSON STRING',jsonString)
+            # print('SIGNATURE',signature)
 
-        property_address = property.address_line_1 + " " +  property.address_line_2
-        property_state = property.state
-        property_city = property.city
-        property_pincode = property.pincode
-        contract_value = property.price
-        date_of_agreement = timezone.now().date()
+            # Create hash of the same payload and then verify the signatures. 
+            # If correct, then accept the application, create a contract and save the data in the table.
+            public_key_pem = AppUser.objects.get(username = username).public_key
+            public_key = RSA.import_key(public_key_pem)
+            # print(public_key)
+            # Create a hash of the original file contents
+            try:
+                h = SHA256.new(base64JsonString.encode('utf-8'))
+                verifier = pkcs1_15.new(public_key)
+                verifier.verify(h, signature)
+            except Exception as e:
+                messages.error(request, 'Signature Error!\n Please Try Again.')
+                response_data = {
+                    'success': False,
+                    'url': f'/seller_contract/{id}'
+                }
+                return JsonResponse(response_data)
+            
+            # Approve the application & reject others.
+            # fetching the object
+            current_application = PropertyApplications.objects.get(id = id)
+            current_property_id = current_application.property_id
+            property = Property.objects.get(id = current_property_id)
+            # Changing the current request's status
+            current_application.status = 'ACCEPTED'
+            current_application.save()
+            
+            # Rejecting all other pending requests.
+            applications = PropertyApplications.objects.filter(property_id=current_property_id, status='PENDING')
+            for application in applications:
+                application.status = 'REJECTED'
+                application.save()
+            
+            buyer_obj = AppUser.objects.get(username = current_application.interested_user)
+            seller_obj = AppUser.objects.get(username = current_application.property_owner)
+            # Create a contract object and save the string. 
+            signed_token = base64JsonString + "." + base64Signature
+            contract_object = Property_Transfer_Contract.objects.create(application_id = id, property_id = current_application.property_id,
+                                                                        property_address_line_1 = property.address_line_1, property_address_line_2 = property.address_line_2,
+                                                                        property_state = property.state, property_city = property.city, property_pincode = property.pincode,
+                                                                        buyer = current_application.interested_user, first_name_buyer = buyer_obj.first_name, second_name_buyer = buyer_obj.second_name,
+                                                                        seller = current_application.property_owner, first_name_seller = seller_obj.first_name, second_name_seller = seller_obj.second_name, 
+                                                                        price = property.price, date_of_agreement = timezone.now().date(), token = signed_token)
+            contract_object.save()
+            messages.success(request, 'Successfully approved the application')
+            response_data = {
+                'success': True,
+                'url': '/my_properties/'
+            }
+            return JsonResponse(response_data)
+            
+        else:
+            # Fetch the current application object.
+            current_application = PropertyApplications.objects.get(id = id)
+            property = Property.objects.get(id = current_application.property_id)
 
-        buyer = AppUser.objects.get(username = current_application.interested_user)
-        buyer_name = buyer.first_name + " " + buyer.second_name
+            property_address = property.address_line_1 + " " +  property.address_line_2
+            property_state = property.state
+            property_city = property.city
+            property_pincode = property.pincode
+            contract_value = property.price
+            date_of_agreement = timezone.now().date()
 
-        seller = AppUser.objects.get(username = current_application.property_owner)
-        seller_name = seller.first_name +  " " + seller.second_name        
+            buyer = AppUser.objects.get(username = current_application.interested_user)
+            buyer_name = buyer.first_name + " " + buyer.second_name
 
-        # Sending contract details to be displayed.
-        resp_data =  {'application_id': id, 'buyer_username':current_application.interested_user,
-                      'buyer_name': buyer_name, 'seller_username': current_application.property_owner, 'seller_name': seller_name,
-                      'property_id': current_application.property_id,  'property_address': property_address,
-                      'city': property_city, 'state': property_state, 'pincode': property_pincode, 
-                      'contract_value': contract_value, 'date_of_agreement': date_of_agreement 
-                      }
-        # messages.info(request, 'Sign the above contract.')
-        return render(request, 'seller_contract.html', resp_data)
-    
+            seller = AppUser.objects.get(username = current_application.property_owner)
+            seller_name = seller.first_name +  " " + seller.second_name        
+
+            # Sending contract details to be displayed.
+            resp_data =  {'application_id': id, 'buyer_username':current_application.interested_user,
+                        'buyer_name': buyer_name, 'seller_username': current_application.property_owner, 'seller_name': seller_name,
+                        'property_id': current_application.property_id,  'property_address': property_address,
+                        'city': property_city, 'state': property_state, 'pincode': property_pincode, 
+                        'contract_value': contract_value, 'date_of_agreement': date_of_agreement 
+                        }
+            # messages.info(request, 'Sign the above contract.')
+            return render(request, 'seller_contract.html', resp_data)
+    except:
+        messages.error(request, 'Unexpected Error')
+        return redirect('my_properties_page')
+
 # Defining a method for generating OTP and saving its object.
 def generateOtpEmail(username):
     otp = str(random.randint(100000, 999999))
