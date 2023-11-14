@@ -1247,308 +1247,147 @@ def rentals_payment_gateway(request, id):
             return redirect('logout_page')
     if(username is None):
         return redirect('login_page')
-    
     if request.session.get('transaction_ekyc') is None or (request.session.get('transaction_ekyc') is not None and request.session.get('transaction_ekyc') != id):
         # EKYC was skipped intentionally.
         messages.info(request, 'EKYC is mandatory before moving on to payment gateway.')
         return redirect('transaction_ekyc_page', id = id)
-    current_application = PropertyApplications.objects.get(id = id)
-    property = Property.objects.get(id = current_application.property_id)
-    if(property.owner == username or current_application.status != 'ACCEPTED' or current_application.interested_user != username):
-        return redirect('logout_page')
-    
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        otp = data.get('otp', None)
-        otp_object = OTP.objects.get(user = username)
-        if otp_object.valid == False:
-            messages.error(request, 'OTP already used before in some old transaction.')
-            response_data = {
-                'success': False,
-                'url': f'/rentals_payment_gateway/{id}'
-            }
-            return JsonResponse(response_data)
-        if otp_object.expiry_time < timezone.now():
-            messages.error(request, 'OTP expired. Please check your mail again.')
-            response_data = {   
-                'success': False,
-                'url': f'/rentals_payment_gateway/{id}'
-            }
-            return JsonResponse(response_data)
-        if otp != otp_object.otp:
-            messages.error(request, 'OTP did not match.')
-            response_data = {
-                'success': False,
-                'url': f'/rentals_payment_gateway/{id}'
-            }
-            return JsonResponse(response_data)
-
-        base64JsonString = data.get('contract_payload', None)
-        # jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
-        base64Signature = data.get('signature', None)
-        # signature = base64.b64decode(base64Signature)
-        signature = base64.b64decode(data.get('signature', None))
-        # print('JSON STRING',jsonString)
-        # print('SIGNATURE',signature)
-
-        # Create hash of the same payload and then verify the signatures. 
-        # If correct, then accept the application, create a contract and save the data in the table.
-        public_key_pem = AppUser.objects.get(username = username).public_key
-        public_key = RSA.import_key(public_key_pem)
-        # print(public_key)
-        # Create a hash of the original file contents
-        try:
-            h = SHA256.new(base64JsonString.encode('utf-8'))
-            verifier = pkcs1_15.new(public_key)
-            verifier.verify(h, signature)
-        except Exception as e:
-            messages.error(request, 'Signature Error!\n Please Try Again.')
-            response_data = {
-                'success': False,
-                'url': f'/rentals_payment_gateway/{id}'
-            }
-            return JsonResponse(response_data)
-        
-        # Signing with admin key.
-        try:
-            with open('/home/iiitd/dj_dir/project/project_app/apk.txt','r') as akf:
-                key = akf.read()
-            # print(key)
-            pk = RSA.import_key(key)
-            # print(pk)
-            admin_sign = pkcs1_15.new(pk).sign(h)
-            admin_b64_sign = base64.b64encode(admin_sign).decode('utf-8')
-        except:
-            # print("Error while signing with admin keys")
-            messages.error(request, 'Signature Error (T2)!\n Please Try Again.')
-            response_data = {
-                'success': False,
-                'url': f'/payment_gateway/{id}'
-            }
-            return JsonResponse(response_data)
-        
-        # Signature verification successful. 
-        lessee_obj = AppUser.objects.get(username = username)
+    try:
         current_application = PropertyApplications.objects.get(id = id)
         property = Property.objects.get(id = current_application.property_id)
-        # Create a contract object and save the string. 
-        signed_token = base64JsonString + "." + base64Signature + "." + admin_b64_sign
-        contract_value = property.duration * property.price
-        rentals_object = RentalsContract.objects.create(application_id = id, property_id = current_application.property_id,
-                                                        property_address_line_1 = property.address_line_1, property_address_line_2 = property.address_line_2,
-                                                        property_state = property.state, property_city = property.city, property_pincode = property.pincode,
-                                                        username = current_application.interested_user, first_name = lessee_obj.first_name, second_name = lessee_obj.second_name, 
-                                                        party_type='lessee' ,date_of_agreement = timezone.now().date(), token = signed_token, duration = property.duration,
-                                                        rent_per_month = property.price, total_rent = contract_value)
-        rentals_object.save()
-
-        # Changing the owner.
-        property_obj = Property.objects.get(id = rentals_object.property_id)
-        property_obj.type = 'ON LEASE'
-        property_obj.save()
-
-        # Rejecting all other existing pending applications.
-        applications = PropertyApplications.objects.filter(property_id= current_application.property_id, status='PENDING')
-        for application in applications:
-            application.status = 'REJECTED'
-            application.save()
-
-        # Updating the application status.
-        current_application_obj = PropertyApplications.objects.get(id = id)
-        current_application_obj.status = 'SUCCESS'
-        current_application_obj.save()
-
-        # Update the OTP object validity.
-        otp_object.valid = False
-        otp_object.save()
-
-        messages.success(request, 'Transaction Successful!')
-        response_data = {
-            'success': True,
-            'url': '/search_properties/'
-        }
-        return JsonResponse(response_data)
-
-    else:
-        current_application = PropertyApplications.objects.get(id = id)
-        # Find the current_user_balance
-        current_user = AppUser.objects.filter(username = username)
-        current_user_balance = current_user[0].balance
-        # print("BALANCE: ",current_user_balance)
-
-        # Find the amount required for the property. (RENTAL -> 12months contract)
-        required_amount = None
-        current_property_id = current_application.property_id
-        property_object = Property.objects.get(id = current_property_id)
-        # property_type = property_object.type
-        required_amount = property_object.duration * property_object.price
-        if(required_amount > current_user_balance):
-            messages.error(request, "INSUFFICIENT BALANCE! Please update it & proceed again!")
-            return redirect('search_properties_page')
-        post_balance = current_user_balance - required_amount
-        
-        # Fetch the current application object.
-        # property = Property.objects.get(id = current_application.property_id)
-
-        property_address = property_object.address_line_1 + " " +  property_object.address_line_2
-        property_state = property_object.state
-        property_city = property_object.city
-        property_pincode = property_object.pincode
-        rent_per_month = property_object.price
-        rental_duration = property_object.duration
-        contract_value = rent_per_month * rental_duration
-        # print("hi")
-        # print(current_application)
-        date_of_agreement = RentalsContract.objects.get(application_id = id).date_of_agreement
-        # print("hi")
-
-        buyer = AppUser.objects.get(username = username)
-        buyer_name = buyer.first_name + " " + buyer.second_name
-
-        # Sending contract details to be displayed.
-            # Sending contract details to be displayed.
-        resp_data =  {'application_id': id, 'buyer_username': buyer.username, 'buyer_name': buyer_name,
-                    'property_id': current_application.property_id,  'property_address': property_address, 'duration': rental_duration,
-                    'city': property_city, 'state': property_state, 'pincode': property_pincode, 'price_pm': rent_per_month, 
-                    'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'party_type': 'Lessee',
-                    'post_balance': post_balance
-                    }
-        
-        generateOtpEmail(username)
-        messages.info(request, f'OTP sent to {AppUser.objects.get(username = username).email}. Please Check SPAM FOLDER in case you do not find it.')
-        return render(request, 'rentals_payment_gateway.html', resp_data)
-         
-
-def payment_gateway(request, id):
-    username = request.session.get('username')
-    if(request.session.get('email_kyc') is None):
+        if(property.owner == username or current_application.status != 'ACCEPTED' or current_application.interested_user != username):
             return redirect('logout_page')
-    if(username is None):
-        return redirect('login_page')
-    if request.session.get('transaction_ekyc') is None or (request.session.get('transaction_ekyc') is not None and request.session.get('transaction_ekyc') != id):
-        # EKYC was skipped intentionally.
-        messages.info(request, 'EKYC is mandatory before moving on to payment gateway.')
-        return redirect('transaction_ekyc_page', id = id)
-    current_application = PropertyApplications.objects.get(id = id)
-    property = Property.objects.get(id = current_application.property_id)
-    if(property.owner == username or current_application.status != 'ACCEPTED' or current_application.interested_user != username):
-        return redirect('logout_page')
-    
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        otp = data.get('otp', None)
-        otp_object = OTP.objects.get(user = username)
-        if otp_object.valid == False:
-            messages.error(request, 'OTP already used before in some old transaction.')
-            response_data = {
-                'success': False,
-                'url': f'/rentals_payment_gateway/{id}'
-            }
-            return JsonResponse(response_data)
-        if otp_object.expiry_time < timezone.now():
-            messages.error(request, 'OTP expired. Please check your mail again.')
-            response_data = {
-                'success': False,
-                'url': f'/rentals_payment_gateway/{id}'
-            }
-            return JsonResponse(response_data)
-        if otp != otp_object.otp:
-            messages.error(request, 'OTP did not match.')
-            response_data = {
-                'success': False,
-                'url': f'/rentals_payment_gateway/{id}'
-            }
-            return JsonResponse(response_data)
-        base64JsonString = data.get('contract_payload', None)
-        # jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
-        base64Signature = data.get('signature', None)
-        # signature = base64.b64decode(base64Signature)
-        signature = base64.b64decode(data.get('signature', None))
-        # print('JSON STRING',jsonString)
-        # print('SIGNATURE',signature)
-
-        # Create hash of the same payload and then verify the signatures. 
-        # If correct, then accept the application, create a contract and save the data in the table.
-        public_key_pem = AppUser.objects.get(username = username).public_key
-        public_key = RSA.import_key(public_key_pem)
-        # print(public_key)
-        # Create a hash of the original file contents
-        try:
-            h = SHA256.new(base64JsonString.encode('utf-8'))
-            verifier = pkcs1_15.new(public_key)
-            verifier.verify(h, signature)
-        except Exception as e:
-            messages.error(request, 'Signature Error!\n Please Try Again.')
-            response_data = {
-                'success': False,
-                'url': f'/payment_gateway/{id}'
-            }
-            return JsonResponse(response_data)
         
-        # Signing with admin key.
-        try:
-            with open('/home/iiitd/dj_dir/project/project_app/apk.txt','r') as akf:
-                key = akf.read()
-            # print(key)
-            pk = RSA.import_key(key)
-            # print(pk)
-            admin_sign = pkcs1_15.new(pk).sign(h)
-            admin_b64_sign = base64.b64encode(admin_sign).decode('utf-8')
-        except:
-            # print("Error while signing with admin keys")
-            messages.error(request, 'Signature Error (T2)!\n Please Try Again.')
+        if request.method == 'POST':
+            data = json.loads(request.body)
+            otp = data.get('otp', None)
+            if(valid_num(otp) == False or len(otp) !=6):
+                messages.error(request, 'Invalid OTP format detected.')
+                response_data = {
+                    'success': False,
+                    'url': f'/rentals_payment_gateway/{id}'
+                }
+                return JsonResponse(response_data)
+            otp_object = OTP.objects.get(user = username)
+            if otp_object.valid == False:
+                messages.error(request, 'OTP already used before in some old transaction.')
+                response_data = {
+                    'success': False,
+                    'url': f'/rentals_payment_gateway/{id}'
+                }
+                return JsonResponse(response_data)
+            if otp_object.expiry_time < timezone.now():
+                messages.error(request, 'OTP expired. Please check your mail again.')
+                response_data = {   
+                    'success': False,
+                    'url': f'/rentals_payment_gateway/{id}'
+                }
+                return JsonResponse(response_data)
+            if otp != otp_object.otp:
+                messages.error(request, 'OTP did not match.')
+                response_data = {
+                    'success': False,
+                    'url': f'/rentals_payment_gateway/{id}'
+                }
+                return JsonResponse(response_data)
+
+            base64JsonString = data.get('contract_payload', None)
+            # jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
+            base64Signature = data.get('signature', None)
+            # signature = base64.b64decode(base64Signature)
+            signature = base64.b64decode(data.get('signature', None))
+            # print('JSON STRING',jsonString)
+            # print('SIGNATURE',signature)
+
+            # Create hash of the same payload and then verify the signatures. 
+            # If correct, then accept the application, create a contract and save the data in the table.
+            public_key_pem = AppUser.objects.get(username = username).public_key
+            public_key = RSA.import_key(public_key_pem)
+            # print(public_key)
+            # Create a hash of the original file contents
+            try:
+                h = SHA256.new(base64JsonString.encode('utf-8'))
+                verifier = pkcs1_15.new(public_key)
+                verifier.verify(h, signature)
+            except Exception as e:
+                messages.error(request, 'Signature Error!\n Please Try Again.')
+                response_data = {
+                    'success': False,
+                    'url': f'/rentals_payment_gateway/{id}'
+                }
+                return JsonResponse(response_data)
+            
+            # Signing with admin key.
+            try:
+                with open('/home/iiitd/dj_dir/project/project_app/apk.txt','r') as akf:
+                    key = akf.read()
+                # print(key)
+                pk = RSA.import_key(key)
+                # print(pk)
+                admin_sign = pkcs1_15.new(pk).sign(h)
+                admin_b64_sign = base64.b64encode(admin_sign).decode('utf-8')
+            except:
+                # print("Error while signing with admin keys")
+                messages.error(request, 'Signature Error (T2)!\n Please Try Again.')
+                response_data = {
+                    'success': False,
+                    'url': f'/payment_gateway/{id}'
+                }
+                return JsonResponse(response_data)
+            
+            # Signature verification successful. 
+            lessee_obj = AppUser.objects.get(username = username)
+            current_application = PropertyApplications.objects.get(id = id)
+            property = Property.objects.get(id = current_application.property_id)
+            # Create a contract object and save the string. 
+            signed_token = base64JsonString + "." + base64Signature + "." + admin_b64_sign
+            contract_value = property.duration * property.price
+            rentals_object = RentalsContract.objects.create(application_id = id, property_id = current_application.property_id,
+                                                            property_address_line_1 = property.address_line_1, property_address_line_2 = property.address_line_2,
+                                                            property_state = property.state, property_city = property.city, property_pincode = property.pincode,
+                                                            username = current_application.interested_user, first_name = lessee_obj.first_name, second_name = lessee_obj.second_name, 
+                                                            party_type='lessee' ,date_of_agreement = timezone.now().date(), token = signed_token, duration = property.duration,
+                                                            rent_per_month = property.price, total_rent = contract_value)
+            rentals_object.save()
+
+            # Changing the owner.
+            property_obj = Property.objects.get(id = rentals_object.property_id)
+            property_obj.type = 'ON LEASE'
+            property_obj.save()
+
+            # Rejecting all other existing pending applications.
+            applications = PropertyApplications.objects.filter(property_id= current_application.property_id, status='PENDING')
+            for application in applications:
+                application.status = 'REJECTED'
+                application.save()
+
+            # Updating the application status.
+            current_application_obj = PropertyApplications.objects.get(id = id)
+            current_application_obj.status = 'SUCCESS'
+            current_application_obj.save()
+
+            # Update the OTP object validity.
+            otp_object.valid = False
+            otp_object.save()
+
+            messages.success(request, 'Transaction Successful!')
             response_data = {
-                'success': False,
-                'url': f'/payment_gateway/{id}'
+                'success': True,
+                'url': '/search_properties/'
             }
             return JsonResponse(response_data)
-        
-        # Signature verification successful. 
-        # Append the signature.
-        contract_object = Property_Transfer_Contract.objects.get(application_id = id)
-        contract_object.token = contract_object.token + "." + base64Signature + "." + admin_b64_sign
-        contract_object.save()
 
-        # Changing the owner.
-        property_obj = Property.objects.get(id = contract_object.property_id)
-        property_obj.owner = contract_object.buyer
-        property_obj.type = 'DELISTED'
-        property_obj.save()
+        else:
+            current_application = PropertyApplications.objects.get(id = id)
+            # Find the current_user_balance
+            current_user = AppUser.objects.filter(username = username)
+            current_user_balance = current_user[0].balance
+            # print("BALANCE: ",current_user_balance)
 
-        # Rejecting all existing applications of this property.
-        applications = PropertyApplications.objects.filter(property_id= current_application.property_id, status='PENDING')
-        for application in applications:
-            application.status = 'REJECTED'
-            application.save()
-        
-        # Updating the current application status.
-        current_application_obj = PropertyApplications.objects.get(id = id)
-        current_application_obj.status = 'SUCCESS'
-        current_application_obj.save()        
-
-        # Updating the OTP object.
-        otp_object.valid = False
-        otp_object.save()
-        messages.success(request, 'Transaction Successful!')
-        response_data = {
-            'success': True,
-            'url': '/search_properties/'
-        }
-        return JsonResponse(response_data)
-
-    else:
-        current_application = PropertyApplications.objects.get(id = id)
-        # Find the current_user_balance
-        current_user = AppUser.objects.filter(username = username)
-        current_user_balance = current_user[0].balance
-        # print("BALANCE: ",current_user_balance)
-
-        # Find the amount required for the property. (RENTAL -> 12months contract)
-        required_amount = None
-        current_property_id = current_application.property_id
-        property_object = Property.objects.get(id = current_property_id)
-        property_type = property_object.type
-        if(property_type.lower() == 'rent'):
+            # Find the amount required for the property. (RENTAL -> 12months contract)
+            required_amount = None
+            current_property_id = current_application.property_id
+            property_object = Property.objects.get(id = current_property_id)
+            # property_type = property_object.type
             required_amount = property_object.duration * property_object.price
             if(required_amount > current_user_balance):
                 messages.error(request, "INSUFFICIENT BALANCE! Please update it & proceed again!")
@@ -1566,62 +1405,244 @@ def payment_gateway(request, id):
             rental_duration = property_object.duration
             contract_value = rent_per_month * rental_duration
             # print("hi")
-            date_of_agreement = RentalsContract.objects.get(application_id = id)
+            # print(current_application)
+            date_of_agreement = RentalsContract.objects.get(application_id = id).date_of_agreement
             # print("hi")
 
             buyer = AppUser.objects.get(username = username)
             buyer_name = buyer.first_name + " " + buyer.second_name
 
-            seller = AppUser.objects.get(username = PropertyApplications.objects.get(id = id).property_owner)
-            # seller = AppUser.objects.get(username = Property_Transfer_Contract.objects.get(application_id = id).seller)
-            seller_name = seller.first_name +  " " + seller.second_name        
-
             # Sending contract details to be displayed.
-             # Sending contract details to be displayed.
-            resp_data =  {'application_id': id, 'seller_username': current_application.property_owner, 'seller_name': seller_name,
+                # Sending contract details to be displayed.
+            resp_data =  {'application_id': id, 'buyer_username': buyer.username, 'buyer_name': buyer_name,
                         'property_id': current_application.property_id,  'property_address': property_address, 'duration': rental_duration,
                         'city': property_city, 'state': property_state, 'pincode': property_pincode, 'price_pm': rent_per_month, 
-                        'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'party_type': 'Lessee'
+                        'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'party_type': 'Lessee',
+                        'post_balance': post_balance
                         }
-            # messages.info(request, 'Sign the above contract.')
-            return render(request, 'payment_gateway.html', resp_data)
-        else:
-            required_amount = property_object.price
-            # print("REQUIRED_AMOUNT: ", required_amount, "\nBALANCE AVAILABLE: ", current_user_balance)
-
-            if(required_amount > current_user_balance):
-                messages.error(request, "INSUFFICIENT BALANCE!")
-                return redirect('search_properties_page')
-            post_balance = current_user_balance - required_amount
             
-            # Fetch the current application object.
-            # property = Property.objects.get(id = current_application.property_id)
-
-            property_address = property_object.address_line_1 + " " +  property_object.address_line_2
-            property_state = property_object.state
-            property_city = property_object.city
-            property_pincode = property_object.pincode
-            contract_value = property_object.price
-            date_of_agreement = Property_Transfer_Contract.objects.get(application_id = id).date_of_agreement
-
-            buyer = AppUser.objects.get(username = username)
-            buyer_name = buyer.first_name + " " + buyer.second_name
-
-            seller = AppUser.objects.get(username = PropertyApplications.objects.get(id = id).property_owner)
-            # seller = AppUser.objects.get(username = Property_Transfer_Contract.objects.get(application_id = id).seller)
-            seller_name = seller.first_name +  " " + seller.second_name        
-
-            # Sending contract details to be displayed.
-            resp_data =  {'application_id': id, 'buyer_username':current_application.interested_user,
-                        'buyer_name': buyer_name, 'seller_username': current_application.property_owner, 'seller_name': seller_name,
-                        'property_id': current_application.property_id,  'property_address': property_address,
-                        'city': property_city, 'state': property_state, 'pincode': property_pincode, 
-                        'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'post_balance': post_balance
-                        }
-            # messages.info(request, 'Sign the above contract.')
             generateOtpEmail(username)
             messages.info(request, f'OTP sent to {AppUser.objects.get(username = username).email}. Please Check SPAM FOLDER in case you do not find it.')
-            return render(request, 'payment_gateway.html', resp_data)
+            return render(request, 'rentals_payment_gateway.html', resp_data)
+    except:
+        messages.error(request, 'Unexpected Error. Please Try Again Later.')
+        return redirect('search_properties_page')
+            
+
+def payment_gateway(request, id):
+    username = request.session.get('username')
+    if(request.session.get('email_kyc') is None):
+            return redirect('logout_page')
+    if(username is None):
+        return redirect('login_page')
+    if request.session.get('transaction_ekyc') is None or (request.session.get('transaction_ekyc') is not None and request.session.get('transaction_ekyc') != id):
+        # EKYC was skipped intentionally.
+        messages.info(request, 'EKYC is mandatory before moving on to payment gateway.')
+        return redirect('transaction_ekyc_page', id = id)
+    try:
+        current_application = PropertyApplications.objects.get(id = id)
+        property = Property.objects.get(id = current_application.property_id)
+        if(property.owner == username or current_application.status != 'ACCEPTED' or current_application.interested_user != username):
+            return redirect('logout_page')
+        
+        if request.method == 'POST':
+            data = json.loads(request.body)
+            otp = data.get('otp', None)
+            otp_object = OTP.objects.get(user = username)
+            if(valid_num(otp) == False or len(otp) !=6):
+                messages.error(request, 'Invalid OTP format detected.')
+                response_data = {
+                    'success': False,
+                    'url': f'/rentals_payment_gateway/{id}'
+                }
+                return JsonResponse(response_data)
+            if otp_object.valid == False:
+                messages.error(request, 'OTP already used before in some old transaction.')
+                response_data = {
+                    'success': False,
+                    'url': f'/rentals_payment_gateway/{id}'
+                }
+                return JsonResponse(response_data)
+            if otp_object.expiry_time < timezone.now():
+                messages.error(request, 'OTP expired. Please check your mail again.')
+                response_data = {
+                    'success': False,
+                    'url': f'/rentals_payment_gateway/{id}'
+                }
+                return JsonResponse(response_data)
+            if otp != otp_object.otp:
+                messages.error(request, 'OTP did not match.')
+                response_data = {
+                    'success': False,
+                    'url': f'/rentals_payment_gateway/{id}'
+                }
+                return JsonResponse(response_data)
+            base64JsonString = data.get('contract_payload', None)
+            # jsonString = base64.b64decode(data.get('contract_payload', None)).decode('utf-8')
+            base64Signature = data.get('signature', None)
+            # signature = base64.b64decode(base64Signature)
+            signature = base64.b64decode(data.get('signature', None))
+            # print('JSON STRING',jsonString)
+            # print('SIGNATURE',signature)
+
+            # Create hash of the same payload and then verify the signatures. 
+            # If correct, then accept the application, create a contract and save the data in the table.
+            public_key_pem = AppUser.objects.get(username = username).public_key
+            public_key = RSA.import_key(public_key_pem)
+            # print(public_key)
+            # Create a hash of the original file contents
+            try:
+                h = SHA256.new(base64JsonString.encode('utf-8'))
+                verifier = pkcs1_15.new(public_key)
+                verifier.verify(h, signature)
+            except Exception as e:
+                messages.error(request, 'Signature Error!\n Please Try Again.')
+                response_data = {
+                    'success': False,
+                    'url': f'/payment_gateway/{id}'
+                }
+                return JsonResponse(response_data)
+            
+            # Signing with admin key.
+            try:
+                with open('/home/iiitd/dj_dir/project/project_app/apk.txt','r') as akf:
+                    key = akf.read()
+                # print(key)
+                pk = RSA.import_key(key)
+                # print(pk)
+                admin_sign = pkcs1_15.new(pk).sign(h)
+                admin_b64_sign = base64.b64encode(admin_sign).decode('utf-8')
+            except:
+                # print("Error while signing with admin keys")
+                messages.error(request, 'Signature Error (T2)!\n Please Try Again.')
+                response_data = {
+                    'success': False,
+                    'url': f'/payment_gateway/{id}'
+                }
+                return JsonResponse(response_data)
+            
+            # Signature verification successful. 
+            # Append the signature.
+            contract_object = Property_Transfer_Contract.objects.get(application_id = id)
+            contract_object.token = contract_object.token + "." + base64Signature + "." + admin_b64_sign
+            contract_object.save()
+
+            # Changing the owner.
+            property_obj = Property.objects.get(id = contract_object.property_id)
+            property_obj.owner = contract_object.buyer
+            property_obj.type = 'DELISTED'
+            property_obj.save()
+
+            # Rejecting all existing applications of this property.
+            applications = PropertyApplications.objects.filter(property_id= current_application.property_id, status='PENDING')
+            for application in applications:
+                application.status = 'REJECTED'
+                application.save()
+            
+            # Updating the current application status.
+            current_application_obj = PropertyApplications.objects.get(id = id)
+            current_application_obj.status = 'SUCCESS'
+            current_application_obj.save()        
+
+            # Updating the OTP object.
+            otp_object.valid = False
+            otp_object.save()
+            messages.success(request, 'Transaction Successful!')
+            response_data = {
+                'success': True,
+                'url': '/search_properties/'
+            }
+            return JsonResponse(response_data)
+
+        else:
+            current_application = PropertyApplications.objects.get(id = id)
+            # Find the current_user_balance
+            current_user = AppUser.objects.filter(username = username)
+            current_user_balance = current_user[0].balance
+            # print("BALANCE: ",current_user_balance)
+
+            # Find the amount required for the property. (RENTAL -> 12months contract)
+            required_amount = None
+            current_property_id = current_application.property_id
+            property_object = Property.objects.get(id = current_property_id)
+            property_type = property_object.type
+            if(property_type.lower() == 'rent'):
+                required_amount = property_object.duration * property_object.price
+                if(required_amount > current_user_balance):
+                    messages.error(request, "INSUFFICIENT BALANCE! Please update it & proceed again!")
+                    return redirect('search_properties_page')
+                post_balance = current_user_balance - required_amount
+                
+                # Fetch the current application object.
+                # property = Property.objects.get(id = current_application.property_id)
+
+                property_address = property_object.address_line_1 + " " +  property_object.address_line_2
+                property_state = property_object.state
+                property_city = property_object.city
+                property_pincode = property_object.pincode
+                rent_per_month = property_object.price
+                rental_duration = property_object.duration
+                contract_value = rent_per_month * rental_duration
+                # print("hi")
+                date_of_agreement = RentalsContract.objects.get(application_id = id)
+                # print("hi")
+
+                buyer = AppUser.objects.get(username = username)
+                buyer_name = buyer.first_name + " " + buyer.second_name
+
+                seller = AppUser.objects.get(username = PropertyApplications.objects.get(id = id).property_owner)
+                # seller = AppUser.objects.get(username = Property_Transfer_Contract.objects.get(application_id = id).seller)
+                seller_name = seller.first_name +  " " + seller.second_name        
+
+                # Sending contract details to be displayed.
+                # Sending contract details to be displayed.
+                resp_data =  {'application_id': id, 'seller_username': current_application.property_owner, 'seller_name': seller_name,
+                            'property_id': current_application.property_id,  'property_address': property_address, 'duration': rental_duration,
+                            'city': property_city, 'state': property_state, 'pincode': property_pincode, 'price_pm': rent_per_month, 
+                            'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'party_type': 'Lessee'
+                            }
+                # messages.info(request, 'Sign the above contract.')
+                return render(request, 'payment_gateway.html', resp_data)
+            else:
+                required_amount = property_object.price
+                # print("REQUIRED_AMOUNT: ", required_amount, "\nBALANCE AVAILABLE: ", current_user_balance)
+
+                if(required_amount > current_user_balance):
+                    messages.error(request, "INSUFFICIENT BALANCE!")
+                    return redirect('search_properties_page')
+                post_balance = current_user_balance - required_amount
+                
+                # Fetch the current application object.
+                # property = Property.objects.get(id = current_application.property_id)
+
+                property_address = property_object.address_line_1 + " " +  property_object.address_line_2
+                property_state = property_object.state
+                property_city = property_object.city
+                property_pincode = property_object.pincode
+                contract_value = property_object.price
+                date_of_agreement = Property_Transfer_Contract.objects.get(application_id = id).date_of_agreement
+
+                buyer = AppUser.objects.get(username = username)
+                buyer_name = buyer.first_name + " " + buyer.second_name
+
+                seller = AppUser.objects.get(username = PropertyApplications.objects.get(id = id).property_owner)
+                # seller = AppUser.objects.get(username = Property_Transfer_Contract.objects.get(application_id = id).seller)
+                seller_name = seller.first_name +  " " + seller.second_name        
+
+                # Sending contract details to be displayed.
+                resp_data =  {'application_id': id, 'buyer_username':current_application.interested_user,
+                            'buyer_name': buyer_name, 'seller_username': current_application.property_owner, 'seller_name': seller_name,
+                            'property_id': current_application.property_id,  'property_address': property_address,
+                            'city': property_city, 'state': property_state, 'pincode': property_pincode, 
+                            'contract_value': contract_value, 'date_of_agreement': date_of_agreement, 'post_balance': post_balance
+                            }
+                # messages.info(request, 'Sign the above contract.')
+                generateOtpEmail(username)
+                messages.info(request, f'OTP sent to {AppUser.objects.get(username = username).email}. Please Check SPAM FOLDER in case you do not find it.')
+                return render(request, 'payment_gateway.html', resp_data)
+    except:
+        messages.error(request, 'Unexpected Error. Please Try Again Later.')
+        return redirect('search_properties_page')
 
 def process_payment(request, id):
     username = request.session.get('username')
@@ -1686,102 +1707,109 @@ def past_buy_history(request):
     if(username is None):
         return redirect('login_page')
 
-    if request.method == 'GET':
-        contracts = Property_Transfer_Contract.objects.filter(buyer = username)
-        buy_contracts_list = []
-        for i in range(len(contracts)):
-            # print(c.application_id)   
-            # print(c)
-            application = PropertyApplications.objects.get(id = contracts[i].application_id)
-            # print(application.status)
-            if application.status == 'SUCCESS':
-                temp = {
-                    'application_id':contracts[i].application_id,
-                    'type':'BUY',
-                    'property_id': contracts[i].property_id,
-                    'seller': contracts[i].seller,
-                    'date_of_agreement': contracts[i].date_of_agreement,
-                    'price': contracts[i].price
-                }
-                # print(type(c))
-                buy_contracts_list.append(temp)
+    try:
+        if request.method == 'GET':
+            contracts = Property_Transfer_Contract.objects.filter(buyer = username)
+            buy_contracts_list = []
+            for i in range(len(contracts)):
+                # print(c.application_id)   
+                # print(c)
+                application = PropertyApplications.objects.get(id = contracts[i].application_id)
+                # print(application.status)
+                if application.status == 'SUCCESS':
+                    temp = {
+                        'application_id':contracts[i].application_id,
+                        'type':'BUY',
+                        'property_id': contracts[i].property_id,
+                        'seller': contracts[i].seller,
+                        'date_of_agreement': contracts[i].date_of_agreement,
+                        'price': contracts[i].price
+                    }
+                    # print(type(c))
+                    buy_contracts_list.append(temp)
 
-        contracts = RentalsContract.objects.filter(username = username, party_type = 'lessee')
-        # print(rental_contracts)
-        for i in range(len(contracts)):
-            application = PropertyApplications.objects.get(id = contracts[i].application_id)
-            # print(application.status)
-            if application.status == 'SUCCESS':
-                temp = {
-                    'application_id':contracts[i].application_id,
-                    'type':'RENT',
-                    'property_id': contracts[i].property_id,
-                    'seller': 'portal',
-                    'date_of_agreement': contracts[i].date_of_agreement,
-                    'price': contracts[i].total_rent
-                }
-                # print(type(c))
-                buy_contracts_list.append(temp)
-        # print("HELLO")
-        # properties = Property.objects.values()
-        # for i in range(len(properties)):
-        #     if username == properties[i]["owner"]:
-        #         my_properties_list.append(properties[i])
-        # print("NUMBER_OF_PROPERTIES:",len(my_properties_list))
-        return render(request, 'past_buy_history.html', {'contracts':buy_contracts_list})
-    
+            contracts = RentalsContract.objects.filter(username = username, party_type = 'lessee')
+            # print(rental_contracts)
+            for i in range(len(contracts)):
+                application = PropertyApplications.objects.get(id = contracts[i].application_id)
+                # print(application.status)
+                if application.status == 'SUCCESS':
+                    temp = {
+                        'application_id':contracts[i].application_id,
+                        'type':'RENT',
+                        'property_id': contracts[i].property_id,
+                        'seller': 'portal',
+                        'date_of_agreement': contracts[i].date_of_agreement,
+                        'price': contracts[i].total_rent
+                    }
+                    # print(type(c))
+                    buy_contracts_list.append(temp)
+            # print("HELLO")
+            # properties = Property.objects.values()
+            # for i in range(len(properties)):
+            #     if username == properties[i]["owner"]:
+            #         my_properties_list.append(properties[i])
+            # print("NUMBER_OF_PROPERTIES:",len(my_properties_list))
+            return render(request, 'past_buy_history.html', {'contracts':buy_contracts_list})
+    except:
+        messages.error(request, 'Unexpected Error. Please Try Again Later.')
+        return redirect('dashboard_page')
+
 def past_sell_history(request):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
         return redirect('logout_page')
     if(username is None):
         return redirect('login_page')
+    try:
+        if request.method == 'GET':
+            sell_contracts_list = []
+            contracts = Property_Transfer_Contract.objects.filter(seller = username)
+            for i in range(len(contracts)):
+                # print(c.application_id)
+                # print(c)
+                application = PropertyApplications.objects.get(id = contracts[i].application_id)
+                # print(application.status)
+                if application.status == 'SUCCESS':
+                    temp = {
+                        'application_id':contracts[i].application_id,
+                        'type':'SELL',
+                        'property_id': contracts[i].property_id,
+                        'buyer': contracts[i].buyer,
+                        'date_of_agreement': contracts[i].date_of_agreement,
+                        'price': contracts[i].price
+                    }
+                    # print(type(c))
+                    sell_contracts_list.append(temp)
+                    # sell_contracts_list.append(c)
+            contracts = RentalsContract.objects.filter(username = username, party_type = 'lessor')
+            for i in range(len(contracts)):
+                # print(c.application_id)
+                # print(c)
+                application = PropertyApplications.objects.get(id = contracts[i].application_id)
+                # print(application.status)
+                if application.status == 'SUCCESS':
+                    temp = {
+                        'application_id':contracts[i].application_id,
+                        'type':'RENT',
+                        'property_id': contracts[i].property_id,
+                        'buyer': 'portal',
+                        'date_of_agreement': contracts[i].date_of_agreement,
+                        'price': contracts[i].total_rent
+                    }
+                    # print(type(c))
+                    sell_contracts_list.append(temp)
+            # print("HELLO")
+            # properties = Property.objects.values()
+            # for i in range(len(properties)):
+            #     if username == properties[i]["owner"]:
+            #         my_properties_list.append(properties[i])
+            # print("NUMBER_OF_PROPERTIES:",len(my_properties_list))
+            return render(request, 'past_sell_history.html', {'contracts':sell_contracts_list})
+    except:
+        messages.error(request, 'Unexpected Error. Please Try Again Later.')
+        return redirect('dashboard_page')
 
-    if request.method == 'GET':
-        sell_contracts_list = []
-        contracts = Property_Transfer_Contract.objects.filter(seller = username)
-        for i in range(len(contracts)):
-            # print(c.application_id)
-            # print(c)
-            application = PropertyApplications.objects.get(id = contracts[i].application_id)
-            # print(application.status)
-            if application.status == 'SUCCESS':
-                temp = {
-                    'application_id':contracts[i].application_id,
-                    'type':'SELL',
-                    'property_id': contracts[i].property_id,
-                    'buyer': contracts[i].buyer,
-                    'date_of_agreement': contracts[i].date_of_agreement,
-                    'price': contracts[i].price
-                }
-                # print(type(c))
-                sell_contracts_list.append(temp)
-                # sell_contracts_list.append(c)
-        contracts = RentalsContract.objects.filter(username = username, party_type = 'lessor')
-        for i in range(len(contracts)):
-            # print(c.application_id)
-            # print(c)
-            application = PropertyApplications.objects.get(id = contracts[i].application_id)
-            # print(application.status)
-            if application.status == 'SUCCESS':
-                temp = {
-                    'application_id':contracts[i].application_id,
-                    'type':'RENT',
-                    'property_id': contracts[i].property_id,
-                    'buyer': 'portal',
-                    'date_of_agreement': contracts[i].date_of_agreement,
-                    'price': contracts[i].total_rent
-                }
-                # print(type(c))
-                sell_contracts_list.append(temp)
-        # print("HELLO")
-        # properties = Property.objects.values()
-        # for i in range(len(properties)):
-        #     if username == properties[i]["owner"]:
-        #         my_properties_list.append(properties[i])
-        # print("NUMBER_OF_PROPERTIES:",len(my_properties_list))
-        return render(request, 'past_sell_history.html', {'contracts':sell_contracts_list})
-    
 def view_contract(request, id):
     username = request.session.get('username')
     if(request.session.get('email_kyc') is None):
