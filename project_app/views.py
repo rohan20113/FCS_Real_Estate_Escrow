@@ -615,6 +615,8 @@ def search_properties(request):
                 if applications[i]['interested_user'] == username and applications[i]['status'] in ['PENDING', 'ACCEPTED']:
                     applications_list.append({'id': applications[i]['id']
                                               , 'status': applications[i]['status']
+                                              , 'interested_user': applications[i]['interested_user']
+                                              , 'property_id': applications[i]['property_id']
                                             })
             # print(applications)
             user_details = [{'user': username}]
@@ -856,8 +858,8 @@ def apply_property_deal(request, id):
                 if(applications[i]['interested_user'] == username):
                     messages.info(request, 'Pending Request Already Exists')
                     return redirect('search_properties_page')
-            if(applications[i]['property_id'] == id and applications[i]['status'] == 'ACCEPTED'):
-                return redirect('display_property_applications_page', id = applications[i]['id'])
+            # if(applications[i]['property_id'] == id and applications[i]['status'] == 'ACCEPTED'):
+            #     return redirect('display_property_applications_page', id = applications[i]['id'])
                 
         # Now, we've to add this pending request for the given property.
         application = PropertyApplications.objects.create(property_id = id, interested_user = username, property_owner = property_owner_username, application_type = contract_type)
